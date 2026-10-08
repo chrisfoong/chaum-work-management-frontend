@@ -15,3 +15,5 @@ Feature branches are stacked; no push/deploy and no .env access.
 Implemented: feature/frontend-tor-location — feat(frontend): add TOR wizard locations equipment and personnel
 
 Implemented: feature/frontend-schedule-leave — feat(frontend): add scheduling leave replacement QR and operational reports
+
+Implemented: feature/frontend-procurement — feat(frontend): add survey approval funding partial purchases and delivery
