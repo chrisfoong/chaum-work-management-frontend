@@ -239,9 +239,39 @@ function RequisitionDetail({ row, onBack }: { row: Row; onBack: () => void }) {
               <Table
                 data={rows(object(inspection.data).tor_requirements)}
                 columns={[
-                  { key: "equipment_name", label: "อุปกรณ์ TOR" },
+                  {
+                    key: "equipment_name",
+                    label: "อุปกรณ์ TOR",
+                    format: (requirement) =>
+                      str(
+                        itemRows(r).find(
+                          (i) => i.equipment_id === requirement.equipment_id,
+                        ),
+                        "equipment_name",
+                      ) || str(requirement, "equipment_id"),
+                  },
                   { key: "required_qty", label: "กำหนด" },
                   { key: "actual_qty", label: "จัดหาแล้ว" },
+                ]}
+              />
+              <h3>คำขอค้างที่มีอุปกรณ์ชนิดเดียวกัน</h3>
+              <Table
+                data={rows(object(inspection.data).other_pending_requests)}
+                columns={[
+                  { key: "requisition_id", label: "ใบคำขอ" },
+                  {
+                    key: "equipment_id",
+                    label: "อุปกรณ์",
+                    format: (requirement) =>
+                      str(
+                        itemRows(r).find(
+                          (i) => i.equipment_id === requirement.equipment_id,
+                        ),
+                        "equipment_name",
+                      ) || str(requirement, "equipment_id"),
+                  },
+                  { key: "status", label: "สถานะ", format: "status" },
+                  { key: "remaining_qty", label: "ยอดขาด" },
                 ]}
               />
               {!rows(object(inspection.data).tor_requirements).length && (

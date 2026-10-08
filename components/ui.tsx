@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import type { API } from "@/lib/api";
+import { notificationInfo } from "@/lib/notification";
 import { dateThai, money } from "@/lib/domain";
 import { num, str, type Row } from "@/lib/types";
 export function Brand({ small = false }: { small?: boolean }) {
@@ -400,6 +401,7 @@ export function ActionForm({
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [result, setResult] = useState<Row>({});
+  const notification = notificationInfo(result);
   return (
     <Modal
       title={title}
@@ -411,13 +413,15 @@ export function ActionForm({
       {done ? (
         <div className="success">
           <Check size={40} />
-          <h3>บันทึกเรียบร้อยแล้ว</h3>
-          {result.notification && typeof result.notification === "object" ? (
-            <p>
-              LINE: {str(result.notification as Row, "status")} —
-              ยังไม่ยืนยันการส่งถึงหรือการอ่าน
+          <h3>ดำเนินรายการเสร็จแล้ว</h3>
+          {notification && (
+            <p role={notification.warning ? "alert" : undefined}>
+              {notification.message}
             </p>
-          ) : null}
+          )}
+          {result.persisted === false && !notification && (
+            <p>คำนวณจากข้อมูลปัจจุบัน ไม่ได้เก็บผลสรุปถาวร</p>
+          )}
           <Button
             onClick={() => {
               onDone();

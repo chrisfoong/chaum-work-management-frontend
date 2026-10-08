@@ -473,7 +473,9 @@ function WorkerLeave({
   const dates = [
     ...new Set(
       (resource.data || [])
-        .filter((r) => r.shift_status !== "cancelled")
+        .filter(
+          (r) => r.shift_status === "scheduled" || r.status === "scheduled",
+        )
         .map((r) => str(r, "work_date").slice(0, 10)),
     ),
   ];

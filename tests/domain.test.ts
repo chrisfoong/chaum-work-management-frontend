@@ -14,6 +14,32 @@ import {
 } from "../lib/domain";
 import { verifiedUser } from "../lib/session";
 import { allowed, backendURL } from "../lib/proxy";
+import { notificationInfo } from "../lib/notification";
+test("LINE acceptance never claims recipient delivery or read", () => {
+  const notice = notificationInfo({
+    status: "accepted",
+    delivery_verified: false,
+    persisted: false,
+  });
+  assert.match(notice?.message || "", /ยังไม่ยืนยัน/);
+  assert.equal(notice?.warning, false);
+  assert.equal(notificationInfo({ success: true }), null);
+});
+test("failed or disabled notification remains visible after business is saved", () => {
+  for (const status of ["partial", "failed", "disabled"]) {
+    const notice = notificationInfo({
+      business_saved: true,
+      notification: { status, delivery_verified: false },
+    });
+    assert.equal(notice?.warning, true);
+    assert.ok(notice?.message);
+  }
+  assert.match(
+    notificationInfo({ status: "disabled", delivery_verified: false })
+      ?.message || "",
+    /ไม่มีข้อความถูกส่ง/,
+  );
+});
 test("money keeps cents exact and supports negative report display", () => {
   assert.equal(satang("9007199254740993.99"), 900719925474099399n);
   assert.equal(decimal(-101n), "-1.01");

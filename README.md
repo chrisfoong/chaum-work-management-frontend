@@ -14,7 +14,7 @@ npm run dev
 
 ตั้งค่าเองโดยอิง `.env.example`: `BACKEND_URL` เป็น origin ของ Go API, public LIFF ID ของ Web และ Worker เป็นคนละค่า LIFF ID ไม่ใช่ Channel ID ไม่ต้องใส่ Supabase URL/key, database password หรือ LINE channel secret ใน Frontend
 
-สำหรับ LINE จริงให้ใช้ HTTPS origin ของเว็บนี้ ตั้ง LIFF endpoint และ callback URL ให้ตรงกับ `/portal` บน origin เดียวกัน เปิด scope `openid` และ `profile` ให้ช่องทาง Web/Mini App อยู่ Provider เดียวกันและอยู่ใน Backend channel allowlist ต้องมี verified LINE subject ใน `public."USER".line_id` และบัญชี active ก่อนใช้งาน Backend อ่าน role จาก DB
+สำหรับ LINE จริงให้ใช้ HTTPS origin ของเว็บนี้ ตั้ง Web LIFF endpoint เป็น `/web` และ Worker Mini App endpoint เป็น `/worker` พร้อม callback URL ของแต่ละช่องทางให้ตรงกัน เปิด scope `openid` และ `profile` ให้ช่องทาง Web/Mini App อยู่ Provider เดียวกันและอยู่ใน Backend channel allowlist ต้องมี verified LINE subject ใน `public."USER".line_id` และบัญชี active ก่อนใช้งาน Backend อ่าน role จาก DB. `/portal` รองรับช่องทางที่เลือกไว้แล้ว; ลิงก์ 9A ของ Backend ควรตั้ง `ASSISTANT_DASHBOARD_URL` เป็น HTTPS `/web`
 
 Frontend ส่ง ID token ไป `/api/backend/web/*` หรือ `/api/backend/liff/*` Next route proxy ส่งต่อไป Go ด้วย origin ที่ตั้งไว้ ไม่ส่ง cookie ไม่เก็บ response cache ไม่ log token และไม่เชื่อ role/user_id ที่เลือกบน UI เป็นหลักฐานสิทธิ์ Backend ใช้ Supabase เดิมและตัดสินสิทธิ์/ownership/ธุรกรรมทั้งหมด
 

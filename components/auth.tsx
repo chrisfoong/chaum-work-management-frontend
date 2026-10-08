@@ -39,9 +39,11 @@ function platformID(platform: "web" | "worker") {
 export function AuthProvider({
   children,
   previewRole,
+  entryPlatform,
 }: {
   children: ReactNode;
   previewRole?: Role;
+  entryPlatform?: "web" | "worker";
 }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(
@@ -56,12 +58,14 @@ export function AuthProvider({
     if (previewRole) return;
     let alive = true;
     (async () => {
-      const platform = sessionStorage.getItem("chaum-platform");
+      const platform =
+        entryPlatform || sessionStorage.getItem("chaum-platform");
       if (platform !== "web" && platform !== "worker") {
         if (alive) setLoading(false);
         return;
       }
       const id = platformID(platform);
+      sessionStorage.setItem("chaum-platform", platform);
       if (!id) throw new Error("ยังไม่ได้ตั้งค่า LIFF ID สำหรับช่องทางนี้");
       const { default: liff } = await import("@line/liff");
       await liff.init({ liffId: id });
@@ -95,7 +99,7 @@ export function AuthProvider({
     return () => {
       alive = false;
     };
-  }, [previewRole]);
+  }, [previewRole, entryPlatform]);
   const value = useMemo<Session | null>(
     () =>
       user && api
@@ -135,12 +139,18 @@ export function AuthProvider({
         <Loading />
       </div>
     );
-  if (!value) return <Login error={error} />;
+  if (!value) return <Login error={error} defaultPlatform={entryPlatform} />;
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
-export function Login({ error: initial = "" }: { error?: string }) {
+export function Login({
+  error: initial = "",
+  defaultPlatform = "web",
+}: {
+  error?: string;
+  defaultPlatform?: "web" | "worker";
+}) {
   const router = useRouter();
-  const [platform, setPlatform] = useState<"web" | "worker">("web");
+  const [platform, setPlatform] = useState<"web" | "worker">(defaultPlatform);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial);
   async function login() {
@@ -155,8 +165,9 @@ export function Login({ error: initial = "" }: { error?: string }) {
       sessionStorage.setItem("chaum-platform", platform);
       const { default: liff } = await import("@line/liff");
       await liff.init({ liffId: id });
-      if (liff.isLoggedIn()) router.push("/portal");
-      else liff.login({ redirectUri: `${window.location.origin}/portal` });
+      const route = platform === "worker" ? "/worker" : "/web";
+      if (liff.isLoggedIn()) router.push(route);
+      else liff.login({ redirectUri: `${window.location.origin}${route}` });
     } catch (e) {
       setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
       setBusy(false);

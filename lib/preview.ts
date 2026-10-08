@@ -43,6 +43,7 @@ export const previewData: Record<string, Row[]> = {
       shift_start_at: `${todayBangkok()}T08:00:00+07:00`,
       shift_end_at: `${todayBangkok()}T16:00:00+07:00`,
       status: "scheduled",
+      shift_status: "scheduled",
       first_name: "สมชาย",
       last_name: "ใจดี",
     },

@@ -1,23 +1,37 @@
 # Frontend tasks
 
-- [x] Existing Next.js structure and responsive shell
-- [x] LINE Web/Worker authentication and verified Go /me
-- [x] Fixed-origin allowlist proxy, exact money/date utilities and tests
-- [ ] TOR/location/catalog feature
-- [ ] Schedule/leave/operations feature
-- [ ] Procurement feature
-- [ ] Payroll/finance feature
-- [ ] Worker Mini App feature
-- [ ] Final browser/build checks and live integrations
+## Implemented
 
-Feature branches are stacked; no push/deploy and no .env access.
+- [x] Next.js App Router เดิม + responsive Web sidebar / Worker bottom navigation
+- [x] โทนเขียวธรรมชาติและ bundled Noto Sans Thai/Inter อิง Figma Make
+- [x] LINE LIFF Web/Worker, role จาก verified Backend /me; ปฏิเสธ inactive/unknown/mismatched role
+- [x] Server API proxy แบบ allowlist, no-store, request size limit, sanitized errors
+- [x] TOR wizard / สถานะสัญญา / catalog / บุคลากร
+- [x] ตารางงาน / เลือกพนักงานว่าง / ใบลา / จัดคนแทน
+- [x] สำรวจ / เทียบ TOR / อนุมัติ / โอนเงิน / ซื้อหลายรอบ / ส่งมอบ / retry LINE
+- [x] การเข้างาน / payroll ครึ่งเดือน / สลิป / mark-paid / invoice / finance export
+- [x] 9A current operational report และ manual Supervisor notification
+- [x] Worker schedule / leave / GPS+QR / checkout photo / shortage / payslip / profile
+- [x] Preview ข้อมูลสมมติแยกจาก API จริง
 
-Implemented: feature/frontend-tor-location — feat(frontend): add TOR wizard locations equipment and personnel
+## Verified locally
 
-Implemented: feature/frontend-schedule-leave — feat(frontend): add scheduling leave replacement QR and operational reports
+- [x] lint / typecheck / unit + API + proxy tests / production build / format
+- [x] Browser preview ทุกเมนู Web และ Worker; desktop/mobile layouts
 
-Implemented: feature/frontend-procurement — feat(frontend): add survey approval funding partial purchases and delivery
+Unit/API/proxy tests 19 ผ่าน, fail 0, skip 0. Browser smoke ตรวจ 8 เมนู Supervisor, 6 เมนู Assistant, 4 เมนู Worker; TOR dialog, 9A ไม่มี financials, CheckIn disabled ก่อนมี GPS/QR และ Preview บล็อก mutation. ไม่พบ console error ใน Preview
 
-Implemented: feature/frontend-payroll-finance — feat(frontend): add payroll payments invoices profit and manual summary notification
+Production build ใช้สำเนา source ที่ตรง repo ในพื้นที่ทดสอบซึ่งไม่มี `.env` เพื่อรักษาข้อห้ามอ่านไฟล์ลับ. Baseline starter ก่อนแก้ lint/build ผ่าน. Typecheck ใน repo รอบแรกติดสิทธิ์เขียน cache tsbuildinfo; ใช้ `--incremental false` เพื่อตรวจโดยไม่เขียน cache
 
-Implemented: feature/frontend-worker-miniapp — feat(frontend): add worker schedules GPS QR check-in evidence leave and payslips
+## Live integration unverified
+
+- [ ] LINE login จริงทั้ง Web/Mini App บน frontend origin นี้
+- [ ] Storage upload/download จริง, GPS/QR check-in, LINE notification จริงในฐานทดสอบแยก
+
+## Deployment configuration / limits
+
+ต้องตั้ง BACKEND_URL, public Web/Worker LIFF IDs และ LIFF endpoint/callback HTTPS ให้ตรง origin นี้เอง ไม่อ่านหรือแก้ `.env` ให้ผู้ใช้ ไม่เพิ่ม Supabase schema และไม่ใช้ Shared Supabase เป็นฐานเขียนเพื่อทดสอบ
+
+5S เอกสารของ Backend ที่ผู้ใช้ให้เลื่อนไว้ไม่ได้แก้ในรอบ Frontend. 6W ไม่มีหน้าเว็บเพิ่ม ใช้ LINE Chat. การส่ง/อ่าน 9A ไม่มีที่เก็บโดยตั้งใจ; accepted ไม่เท่ากับ delivered/read. ไม่มี deploy/push ในรอบนี้
+
+Backend Worker schedule list จำกัด work_date ตั้งแต่วันนี้. เวลาสิ้นสุดกะข้ามคืนแสดงจาก API ได้ แต่การค้นกะของวันก่อนหลังเที่ยงคืนยังต้องทวน read model ของ Backend บนฐานทดสอบ; Frontend ไม่ข้าม ownership หรือสร้างข้อมูลตารางเอง
