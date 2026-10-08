@@ -11,3 +11,5 @@
 - [ ] Final browser/build checks and live integrations
 
 Feature branches are stacked; no push/deploy and no .env access.
+
+Implemented: feature/frontend-tor-location — feat(frontend): add TOR wizard locations equipment and personnel
