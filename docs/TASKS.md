@@ -19,3 +19,5 @@ Implemented: feature/frontend-schedule-leave — feat(frontend): add scheduling 
 Implemented: feature/frontend-procurement — feat(frontend): add survey approval funding partial purchases and delivery
 
 Implemented: feature/frontend-payroll-finance — feat(frontend): add payroll payments invoices profit and manual summary notification
+
+Implemented: feature/frontend-worker-miniapp — feat(frontend): add worker schedules GPS QR check-in evidence leave and payslips
