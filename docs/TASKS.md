@@ -17,3 +17,5 @@ Implemented: feature/frontend-tor-location — feat(frontend): add TOR wizard lo
 Implemented: feature/frontend-schedule-leave — feat(frontend): add scheduling leave replacement QR and operational reports
 
 Implemented: feature/frontend-procurement — feat(frontend): add survey approval funding partial purchases and delivery
+
+Implemented: feature/frontend-payroll-finance — feat(frontend): add payroll payments invoices profit and manual summary notification
