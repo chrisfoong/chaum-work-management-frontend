@@ -1,11 +1,18 @@
 "use client";
 import { useState } from "react";
-import { Download, Send, Wallet } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarCheck,
+  Download,
+  RefreshCw,
+  Send,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { useSession } from "./auth";
 import {
   ActionForm,
   AddButton,
-  Badge,
   Button,
   ErrorBox,
   Field,
@@ -22,7 +29,15 @@ import {
   useData,
 } from "./ui";
 import { DateFilters } from "./schedule";
-import { decimal, money, period, satang, todayBangkok } from "@/lib/domain";
+import {
+  decimal,
+  dateThai,
+  money,
+  period,
+  satang,
+  todayBangkok,
+} from "@/lib/domain";
+import { payrollForPeriod, payrollSummary } from "@/lib/payroll";
 import { rows, str, type Row } from "@/lib/types";
 export function Payroll() {
   const { api, list } = useSession();
@@ -39,22 +54,13 @@ export function Payroll() {
         `payroll?period_month=${month}&limit=100`,
         signal,
       );
-      return result.filter(
-        (r) =>
-          str(r, "period_start").slice(0, 10) === range.period_start &&
-          str(r, "period_end").slice(0, 10) === range.period_end,
-      );
+      return payrollForPeriod(result, range);
     },
-    [month, half, offset],
+    [month, half],
   );
-  let total = 0n;
-  for (const r of resource.data || []) {
-    try {
-      total += satang(str(r, "net_wage"));
-    } catch {
-      /* invalid display stays unavailable */
-    }
-  }
+  const summary = payrollSummary(resource.data || []);
+  const ready = !resource.loading && !resource.error;
+  const visible = (resource.data || []).slice(offset, offset + 50);
   return (
     <>
       <Heading
@@ -93,17 +99,56 @@ export function Payroll() {
             <option value="2">วันที่ 16–สิ้นเดือน</option>
           </select>
         </Field>
+        <Button
+          variant="secondary"
+          disabled={resource.loading}
+          onClick={resource.refresh}
+        >
+          <RefreshCw size={17} /> รีเฟรชข้อมูล
+        </Button>
       </div>
       <div className="stats-grid">
-        <Stat label="พนักงานในหน้านี้" value={resource.data?.length || 0} />
-        <Stat label="ยอดสุทธิในหน้านี้" value={money(decimal(total))} />
-        <Stat label="รอบเริ่ม" value={range.period_start} />
-        <Stat label="รอบสิ้นสุด" value={range.period_end} />
+        <Stat
+          label="พนักงานในรอบนี้"
+          value={ready && summary.valid ? summary.employees : "—"}
+          icon={<Users size={20} />}
+          note="รวมทั้งรอบ ไม่ขึ้นกับหน้าตาราง"
+        />
+        <Stat
+          label="ยอดสุทธิในรอบนี้"
+          value={
+            ready && summary.net !== null ? money(decimal(summary.net)) : "—"
+          }
+          icon={<Wallet size={20} />}
+          note="บาท · รวมสลิปที่จ่ายแล้วและยังไม่จ่าย"
+        />
+        <Stat
+          label="รอบเริ่ม"
+          value={dateThai(range.period_start)}
+          icon={<CalendarDays size={20} />}
+        />
+        <Stat
+          label="รอบสิ้นสุด"
+          value={dateThai(range.period_end)}
+          icon={<CalendarCheck size={20} />}
+        />
       </div>
+      {ready && !summary.valid && (
+        <ErrorBox
+          error="ข้อมูลค่าจ้างบางรายการไม่ครบหรือยอดเงินไม่ถูกต้อง จึงยังสรุปยอดไม่ได้"
+          retry={resource.refresh}
+        />
+      )}
       <Panel>
         <Resource {...resource} retry={resource.refresh}>
+          {!resource.data?.length && (
+            <p className="notice">
+              ยังไม่มีข้อมูลค่าจ้างสำหรับรอบนี้ เลือกรอบอื่น
+              หรือประมวลผลเมื่อรอบสิ้นสุดและข้อมูลเข้างานครบแล้ว
+            </p>
+          )}
           <Table
-            data={(resource.data || []).slice(offset, offset + 50)}
+            data={visible}
             columns={[
               {
                 key: "first_name",
@@ -124,7 +169,9 @@ export function Payroll() {
                 key: "is_paid",
                 label: "สถานะจ่าย",
                 format: (r) => (
-                  <Badge value={r.is_paid ? "completed" : "pending"} />
+                  <span className={`badge ${r.is_paid ? "green" : "amber"}`}>
+                    {r.is_paid ? "จ่ายแล้ว" : "ยังไม่จ่าย"}
+                  </span>
                 ),
               },
             ]}
@@ -140,7 +187,8 @@ export function Payroll() {
           />
           <Pager
             offset={offset}
-            count={(resource.data || []).slice(offset, offset + 50).length}
+            count={visible.length}
+            hasNext={offset + 50 < (resource.data?.length || 0)}
             onChange={setOffset}
           />
         </Resource>

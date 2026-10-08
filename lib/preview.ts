@@ -1,4 +1,4 @@
-import { todayBangkok } from "./domain";
+import { period, todayBangkok } from "./domain";
 import type { Row, Role, User } from "./types";
 const uuid = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -103,12 +103,30 @@ export const previewData: Record<string, Row[]> = {
       payroll_id: uuid(9),
       first_name: "สมชาย",
       last_name: "ใจดี",
-      period_start: "2026-09-16",
-      period_end: "2026-09-30",
+      user_id: uuid(1),
+      ...period(todayBangkok().slice(0, 7), 1),
       base_wage: "6000.00",
       total_deduction: "300.00",
       net_wage: "5700.00",
       is_paid: true,
+      calculated_penalties: [
+        {
+          work_date: todayBangkok().slice(0, 8) + "01",
+          reason: "late",
+          penalty_amount: "300.00",
+        },
+      ],
+    },
+    {
+      payroll_id: uuid(30),
+      user_id: uuid(1),
+      first_name: "สมชาย",
+      last_name: "ใจดี",
+      ...period(todayBangkok().slice(0, 7), 2),
+      base_wage: "6400.00",
+      total_deduction: "0.00",
+      net_wage: "6400.00",
+      is_paid: false,
     },
   ],
   equipment: [
@@ -212,4 +230,23 @@ export function previewGet(path: string): unknown {
       shift_start_time: "08:00",
     };
   return {};
+}
+
+export function previewList(path: string, role?: Role): Row[] {
+  const [name, query] = path.split("?");
+  const source = previewData[name] || [];
+  const data =
+    name === "payroll" && role === "worker"
+      ? source.filter(
+          (row) =>
+            row.is_paid === true && row.user_id === previewUser(role).user_id,
+        )
+      : source;
+  if (name === "payroll") {
+    const month = new URLSearchParams(query).get("period_month");
+    return month
+      ? data.filter((row) => String(row.period_start).slice(0, 7) === month)
+      : data;
+  }
+  return data;
 }

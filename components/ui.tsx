@@ -542,16 +542,20 @@ export function Table({
 export function Pager({
   offset,
   count,
+  hasNext,
   onChange,
 }: {
   offset: number;
   count: number;
+  hasNext?: boolean;
   onChange: (n: number) => void;
 }) {
   return (
     <div className="pager">
       <span>
-        รายการ {offset + 1}–{offset + count}
+        {count
+          ? `รายการ ${offset + 1}–${offset + count}`
+          : "ไม่มีรายการในหน้านี้"}
       </span>
       <Button
         variant="secondary"
@@ -563,7 +567,7 @@ export function Pager({
       </Button>
       <Button
         variant="secondary"
-        disabled={count < 50}
+        disabled={hasNext === undefined ? count < 50 : !hasNext}
         onClick={() => onChange(offset + 50)}
       >
         ถัดไป

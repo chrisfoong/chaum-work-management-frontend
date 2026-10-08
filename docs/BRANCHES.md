@@ -12,9 +12,11 @@ Local commits เท่านั้น ไม่มี push/deploy. แต่ล
 | feature/frontend-worker-miniapp  | feature/frontend-payroll-finance | Worker GPS/QR, checkout photo, leave, shortage, payslips/profile                                |
 | feature/frontend-verification    | feature/frontend-worker-miniapp  | final API field corrections, direct LIFF entry routes, notification outcomes, verification docs |
 
-HEAD อยู่ feature/frontend-verification ซึ่งรวมทุก feature. main ยังเป็น baseline เดิม. Foundation มีช่องหน้าจอชั่วคราวที่ถูกแทนด้วย implementation ใน branch ถัดไป; อย่า merge/deploy foundation อย่างเดียวเป็นสินค้าสำเร็จ
+HEAD อยู่ feature/frontend-payroll-summary ซึ่งรวมทุก feature. main ยังเป็น baseline เดิม. Foundation มีช่องหน้าจอชั่วคราวที่ถูกแทนด้วย implementation ใน branch ถัดไป; อย่า merge/deploy foundation อย่างเดียวเป็นสินค้าสำเร็จ
 
 ```bash
 git diff feature/frontend-foundation...feature/frontend-tor-location
 git diff main...feature/frontend-verification
 ```
+
+`feature/frontend-payroll-summary` ต่อจาก `feature/frontend-verification`: แก้ summary/range/Preview/refresh และ regression tests ของ Payroll.

@@ -19,7 +19,7 @@
 - [x] lint / typecheck / unit + API + proxy tests / production build / format
 - [x] Browser preview ทุกเมนู Web และ Worker; desktop/mobile layouts
 
-Unit/API/proxy tests 19 ผ่าน, fail 0, skip 0. Browser smoke ตรวจ 8 เมนู Supervisor, 6 เมนู Assistant, 4 เมนู Worker; TOR dialog, 9A ไม่มี financials, CheckIn disabled ก่อนมี GPS/QR และ Preview บล็อก mutation. ไม่พบ console error ใน Preview
+Unit/API/proxy tests 24 ผ่าน, fail 0, skip 0. Browser smoke ตรวจ 8 เมนู Supervisor, 6 เมนู Assistant, 4 เมนู Worker; TOR dialog, 9A ไม่มี financials, CheckIn disabled ก่อนมี GPS/QR และ Preview บล็อก mutation. ไม่พบ console error ใน Preview
 
 Production build ใช้สำเนา source ที่ตรง repo ในพื้นที่ทดสอบซึ่งไม่มี `.env` เพื่อรักษาข้อห้ามอ่านไฟล์ลับ. Baseline starter ก่อนแก้ lint/build ผ่าน. Typecheck ใน repo รอบแรกติดสิทธิ์เขียน cache tsbuildinfo; ใช้ `--incremental false` เพื่อตรวจโดยไม่เขียน cache
 
@@ -35,3 +35,13 @@ Production build ใช้สำเนา source ที่ตรง repo ใน�
 5S เอกสารของ Backend ที่ผู้ใช้ให้เลื่อนไว้ไม่ได้แก้ในรอบ Frontend. 6W ไม่มีหน้าเว็บเพิ่ม ใช้ LINE Chat. การส่ง/อ่าน 9A ไม่มีที่เก็บโดยตั้งใจ; accepted ไม่เท่ากับ delivered/read. ไม่มี deploy/push ในรอบนี้
 
 Backend Worker schedule list จำกัด work_date ตั้งแต่วันนี้. เวลาสิ้นสุดกะข้ามคืนแสดงจาก API ได้ แต่การค้นกะของวันก่อนหลังเที่ยงคืนยังต้องทวน read model ของ Backend บนฐานทดสอบ; Frontend ไม่ข้าม ownership หรือสร้างข้อมูลตารางเอง
+
+## Payroll summary follow-up (2026-10-09)
+
+- [x] สรุปพนักงานไม่ซ้ำและยอดสุทธิทั้งรอบ แยกจาก pagination; ไม่โหลด API ซ้ำเมื่อเปลี่ยนหน้าตาราง
+- [x] เปลี่ยนเดือน/ครึ่งเดือน, รีเฟรชข้อมูล, วันเริ่ม/สิ้นสุดภาษาไทย, ไอคอน และสถานะจ่ายแล้ว/ยังไม่จ่าย
+- [x] ข้อมูล Preview ทั้งสองครึ่งเดือนปัจจุบัน; เดือนอื่นแสดงว่าง ไม่คัดลอกยอดไปทุกเดือน
+- [x] โหลด/ผิดพลาดไม่แสดงยอดศูนย์แทนข้อมูลจริง; ยอด/identity ผิดรูปแบบไม่รวมยอดบางส่วนเงียบๆ
+- [x] Tests รวมเกิน 50 แถว/พนักงานซ้ำ/สตางค์/ยอดผิดรูปแบบ/ข้ามรอบ/Preview filter
+
+ยอด Preview เป็นข้อมูลสมมติเท่านั้น; ยังไม่ตรวจ live Supabase/LINE ของ frontend นี้ และไม่สร้างสลิปในฐานจริงเพื่อแก้หน้าจอ Preview

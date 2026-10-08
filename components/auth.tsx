@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { verifiedUser } from "@/lib/session";
 import { API } from "@/lib/api";
 import { object, roleName, type Role, type User } from "@/lib/types";
-import { previewData, previewUser, previewGet } from "@/lib/preview";
+import { previewList, previewUser, previewGet } from "@/lib/preview";
 import { Brand, Button, ErrorBox, Loading } from "./ui";
 type Session = {
   user: User;
@@ -109,7 +109,7 @@ export function AuthProvider({
             preview: !!previewRole,
             list: (path, signal) =>
               previewRole
-                ? Promise.resolve(previewData[path.split("?")[0]] || [])
+                ? Promise.resolve(previewList(path, previewRole))
                 : new URLSearchParams(path.split("?")[1]).get("limit") === "100"
                   ? api.all(path, signal)
                   : api.list(path, signal),
