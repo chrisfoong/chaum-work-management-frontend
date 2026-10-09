@@ -593,17 +593,7 @@ export function Catalog() {
   const [create, setCreate] = useState(false);
   const [offset, setOffset] = useState(0);
   const resource = useData(
-    async (signal) => {
-      const data = await list(`${tab}?limit=50&offset=${offset}`, signal);
-      if (tab !== "locations") return data;
-      const assigned = await list("assignments?limit=100", signal);
-      return data.map((r) => {
-        const area = assigned.find((a) => a.location_id === r.location_id);
-        return area
-          ? { ...r, latitude: area.latitude, longitude: area.longitude }
-          : r;
-      });
-    },
+    (signal) => list(`${tab}?limit=50&offset=${offset}`, signal),
     [tab, offset],
   );
   const title =

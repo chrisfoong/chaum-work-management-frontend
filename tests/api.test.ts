@@ -125,3 +125,24 @@ test("option loading follows paginated results and preserves query filters", asy
     global.fetch = previous;
   }
 });
+
+test("HTML from a tunnel is a connection error, never a successful API login", async () => {
+  const previous = global.fetch;
+  global.fetch = async (_, init) => {
+    assert.equal(new Headers(init?.headers).get("accept"), "application/json");
+    return new Response("<!DOCTYPE html><html>warning</html>", {
+      headers: { "content-type": "text/html" },
+    });
+  };
+  try {
+    await assert.rejects(
+      new API("supervisor", () => "test").get("me"),
+      (error: unknown) =>
+        error instanceof APIError &&
+        error.status === 502 &&
+        !error.message.includes("<!DOCTYPE"),
+    );
+  } finally {
+    global.fetch = previous;
+  }
+});

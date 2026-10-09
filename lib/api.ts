@@ -25,6 +25,13 @@ export class API {
     if (!token) throw new APIError("กรุณาเข้าสู่ระบบ LINE ใหม่", 401);
     const headers = new Headers(init.headers);
     headers.set("Authorization", `Bearer ${token}`);
+    headers.set("Accept", "application/json");
+    if (
+      typeof window !== "undefined" &&
+      /\.ngrok-free\.(dev|app)$/.test(window.location.hostname)
+    ) {
+      headers.set("ngrok-skip-browser-warning", "1");
+    }
     if (typeof init.body === "string")
       headers.set("Content-Type", "application/json");
     let response: Response;
@@ -63,8 +70,21 @@ export class API {
     }
     return response;
   }
+  private async json(response: Response): Promise<unknown> {
+    if (!response.headers.get("content-type")?.includes("application/json")) {
+      throw new APIError(
+        "ปลายทางส่งหน้าเว็บแทนข้อมูล API กรุณาตรวจ tunnel และ Backend",
+        502,
+      );
+    }
+    try {
+      return await response.json();
+    } catch {
+      throw new APIError("ข้อมูลตอบกลับจาก API ไม่ถูกต้อง กรุณาลองใหม่", 502);
+    }
+  }
   async get(path: string, signal?: AbortSignal): Promise<unknown> {
-    return (await this.response(path, { signal })).json();
+    return this.json(await this.response(path, { signal }));
   }
   async list(path: string, signal?: AbortSignal): Promise<Row[]> {
     return rows(await this.get(path, signal));
@@ -84,14 +104,17 @@ export class API {
     throw new APIError("ข้อมูลมีจำนวนมาก กรุณาจำกัดช่วงเวลา", 422);
   }
   async post(path: string, body: unknown = {}): Promise<unknown> {
-    return (
-      await this.response(path, { method: "POST", body: JSON.stringify(body) })
-    ).json();
+    return this.json(
+      await this.response(path, { method: "POST", body: JSON.stringify(body) }),
+    );
   }
   async patch(path: string, body: unknown): Promise<unknown> {
-    return (
-      await this.response(path, { method: "PATCH", body: JSON.stringify(body) })
-    ).json();
+    return this.json(
+      await this.response(path, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    );
   }
   async upload(
     file: File,

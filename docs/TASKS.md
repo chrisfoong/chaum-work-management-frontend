@@ -53,3 +53,13 @@ Backend feature/worker-overnight-read-model เพิ่มกะวันก่
 - [x] Shared LIFF initialization and timeout prevent duplicate initialization/infinite loading, no auth bypass.
 - [x] Configurable explicit FRONTEND_DEV_HOST for owned development tunnel.
 - [ ] Live login/upload/check-in/out/LINE delivery still pending actual configuration and human mobile steps. See LIVE_ACCEPTANCE.md.
+
+## Mock verification follow-up (2026-10-09)
+
+- [x] User authorized self-generated mock data following Supabase format; full Backend isolated integration run: 235 tests/subtests pass, fail 0, skip 0.
+- [x] Frontend tests: 28 pass, fail 0, skip 0; lint/typecheck/build passed on source copy without .env.
+- [x] Location catalog now uses nullable coordinates returned directly by GET locations; Backend regression verifies unassigned locations and null coordinates.
+- [x] Actual Supervisor LINE login and existing mock location read verified in browser.
+- [ ] Physical GPS/camera, real Storage upload/download and LINE delivery still unverified. File chooser did not attach the mock PNG and browser tab crashed; no upload success claimed.
+
+User previously allowed scoped live application writes in shared Supabase, superseding the old shared-write restriction for that workflow. Automated mock integration still uses isolated localhost PostgreSQL only. No Supabase schema changes or test writes this round. Go runtime must restart to use the location read change. No .env access, push or deploy.

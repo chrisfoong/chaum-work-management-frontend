@@ -149,7 +149,6 @@ export function Login({
   error?: string;
   defaultPlatform?: "web" | "worker";
 }) {
-  const router = useRouter();
   const [platform, setPlatform] = useState<"web" | "worker">(defaultPlatform);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial);
@@ -165,7 +164,7 @@ export function Login({
       sessionStorage.setItem("chaum-platform", platform);
       const liff = await initializeLIFF(id);
       const route = platform === "worker" ? "/worker" : "/web";
-      if (liff.isLoggedIn()) router.push(route);
+      if (liff.isLoggedIn()) window.location.replace(route);
       else liff.login({ redirectUri: `${window.location.origin}${route}` });
     } catch (e) {
       setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
