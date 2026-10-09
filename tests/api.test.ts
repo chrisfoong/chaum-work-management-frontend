@@ -146,3 +146,27 @@ test("HTML from a tunnel is a connection error, never a successful API login", a
     global.fetch = previous;
   }
 });
+
+test("expired LINE token gives a relogin instruction without retrying or bypassing auth", async () => {
+  const previous = global.fetch;
+  let calls = 0;
+  global.fetch = async () => {
+    calls++;
+    return Response.json(
+      { error: { message: "invalid or expired token" } },
+      { status: 401 },
+    );
+  };
+  try {
+    await assert.rejects(
+      new API("supervisor", () => "test-expired").get("requisitions"),
+      (e: unknown) =>
+        e instanceof APIError &&
+        e.status === 401 &&
+        /เข้าสู่ระบบ LINE ใหม่/.test(e.message),
+    );
+    assert.equal(calls, 1);
+  } finally {
+    global.fetch = previous;
+  }
+});

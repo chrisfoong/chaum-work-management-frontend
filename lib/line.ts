@@ -36,3 +36,16 @@ export async function initializeLIFF(id: string) {
   await initialization.promise;
   return liff;
 }
+
+// An explicit login action must renew a stale SDK session, not reuse its ID token.
+export function startLINELogin(
+  liff: {
+    isLoggedIn: () => boolean;
+    logout: () => void;
+    login: (options: { redirectUri: string }) => void;
+  },
+  redirectUri: string,
+) {
+  if (liff.isLoggedIn()) liff.logout();
+  liff.login({ redirectUri });
+}

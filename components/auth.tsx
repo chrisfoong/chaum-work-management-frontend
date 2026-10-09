@@ -9,7 +9,7 @@ import {
 } from "react";
 import { ArrowRight, Monitor, ShieldCheck, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { initializeLIFF } from "@/lib/line";
+import { initializeLIFF, startLINELogin } from "@/lib/line";
 import { verifiedUser } from "@/lib/session";
 import { API } from "@/lib/api";
 import { object, roleName, type Role, type User } from "@/lib/types";
@@ -152,6 +152,32 @@ export function Login({
   const [platform, setPlatform] = useState<"web" | "worker">(defaultPlatform);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("liff.state") && !params.has("liffClientId")) return;
+    let alive = true;
+    const stored = sessionStorage.getItem("chaum-platform");
+    const callbackPlatform = stored === "worker" ? "worker" : defaultPlatform;
+    const id = platformID(callbackPlatform);
+    if (!id) return;
+    initializeLIFF(id)
+      .then((liff) => {
+        if (alive && liff.isLoggedIn())
+          window.location.replace(
+            callbackPlatform === "worker" ? "/worker" : "/web",
+          );
+      })
+      .catch((e) => {
+        if (alive)
+          setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
+      })
+      .finally(() => {
+        if (alive) setBusy(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [defaultPlatform]);
   async function login() {
     setBusy(true);
     setError("");
@@ -164,8 +190,7 @@ export function Login({
       sessionStorage.setItem("chaum-platform", platform);
       const liff = await initializeLIFF(id);
       const route = platform === "worker" ? "/worker" : "/web";
-      if (liff.isLoggedIn()) window.location.replace(route);
-      else liff.login({ redirectUri: `${window.location.origin}${route}` });
+      startLINELogin(liff, `${window.location.origin}${route}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
       setBusy(false);
