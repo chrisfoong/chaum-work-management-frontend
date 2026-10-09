@@ -92,7 +92,6 @@ export function Empty({
 }) {
   return (
     <div className="empty">
-      <TreePine size={36} />
       <h3>{text}</h3>
       <p>{detail}</p>
     </div>
@@ -178,7 +177,6 @@ export function Stat({
   label,
   value,
   note,
-  icon,
 }: {
   label: string;
   value: ReactNode;
@@ -189,7 +187,6 @@ export function Stat({
     <div className="stat">
       <div className="stat-top">
         <span>{label}</span>
-        <span className="stat-icon">{icon}</span>
       </div>
       <strong>{value}</strong>
       {note && <small>{note}</small>}

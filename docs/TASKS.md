@@ -63,3 +63,13 @@ Backend feature/worker-overnight-read-model เพิ่มกะวันก่
 - [ ] Physical GPS/camera, real Storage upload/download and LINE delivery still unverified. File chooser did not attach the mock PNG and browser tab crashed; no upload success claimed.
 
 User previously allowed scoped live application writes in shared Supabase, superseding the old shared-write restriction for that workflow. Automated mock integration still uses isolated localhost PostgreSQL only. No Supabase schema changes or test writes this round. Go runtime must restart to use the location read change. No .env access, push or deploy.
+
+## UI refinement (2026-10-09)
+
+- [x] Preserved page layouts, green visual identity, routes, API calls, state and business behavior.
+- [x] Removed greeting emojis, login orbs, decorative sidebar note, duplicate status decoration and empty/stat icons.
+- [x] Unified Lucide stroke/functional icon sizes, restrained radii/badges, plain surfaces and focus outlines; improved small-text readability.
+- [x] Audited app/components source for emoji/gradients; reviewed all Supervisor/Assistant/Worker menu pages, Login and Worker at 390px. Preview only; no mutation.
+- [x] Frontend 28 tests, lint, typecheck, production build and formatting passed on the source copy without .env. Backend pre-merge isolated suite 235 tests/subtests, vet/build passed.
+
+Real mobile GPS/camera, real Storage transfer and actual LINE delivery remain separate acceptance checks. UI polish does not establish those results. User authorized pushing and merging both repositories into develop after checks; no deploy.

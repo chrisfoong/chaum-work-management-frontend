@@ -174,8 +174,6 @@ export function Login({
   return (
     <main className="login-screen">
       <div className="login-art">
-        <div className="orb one" />
-        <div className="orb two" />
         <Brand />
         <div>
           <span className="eyebrow">ดูแลงาน ดูแลคน ดูแลพื้นที่สีเขียว</span>

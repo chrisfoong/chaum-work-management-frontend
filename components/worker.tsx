@@ -69,7 +69,7 @@ export function WorkerHome({
     <>
       <div className="worker-greeting">
         <span>{dateThai(todayBangkok(), true)}</span>
-        <h1>สวัสดี {user.first_name} 🌿</h1>
+        <h1>สวัสดี {user.first_name}</h1>
         <p>พร้อมดูแลพื้นที่สีเขียววันนี้แล้วหรือยัง?</p>
       </div>
       <Resource {...resource} retry={resource.refresh}>

@@ -9,7 +9,7 @@
   --green-dark: #204d3b;
   --green-soft: #eaf3ed;
   --ink: #24352d;
-  --muted: #829088;
+  --muted: #65756b;
   --line: #e6ece7;
   --paper: #fff;
   --canvas: #f4f7f4;
@@ -66,7 +66,7 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 29px;
+  font-size: 26px;
   line-height: 1.4;
   font-weight: 700;
   letter-spacing: -0.6px;
@@ -101,7 +101,7 @@ select,
 textarea {
   width: 100%;
   border: 1px solid #dce5de;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fff;
   padding: 10px 12px;
   color: var(--ink);
@@ -111,7 +111,6 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--green);
-  box-shadow: 0 0 0 3px #2e6b5014;
 }
 input[type="checkbox"] {
   width: 18px;
@@ -146,7 +145,7 @@ input::file-selector-button {
   width: 46px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
+  border-radius: 8px;
   background: var(--green);
   color: #fff;
 }
@@ -166,7 +165,7 @@ input::file-selector-button {
 .brand.small .brand-icon {
   height: 35px;
   width: 35px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .brand.small strong {
   font-size: 21px;
@@ -177,23 +176,19 @@ input::file-selector-button {
   justify-content: center;
   gap: 8px;
   padding: 10px 16px;
-  border-radius: 9px;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 13px;
   min-height: 42px;
   border: 1px solid transparent;
-  transition:
-    background 0.15s,
-    transform 0.15s;
+  transition: background 0.15s;
 }
 .button.primary {
   background: var(--green);
   color: #fff;
-  box-shadow: 0 3px 8px #2e6b5010;
 }
 .button.primary:hover:not(:disabled) {
   background: var(--green-dark);
-  transform: translateY(-1px);
 }
 .button.secondary {
   border-color: #dce5de;
@@ -223,37 +218,30 @@ input::file-selector-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
 }
-.badge:before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 100%;
-  background: currentColor;
-}
 .badge.green {
-  background: #e8f4eb;
+  background: #edf4ef;
   color: #327650;
 }
 .badge.amber {
-  background: #fff5df;
+  background: #f6f2e8;
   color: #a17d2b;
 }
 .badge.red {
-  background: #fbeceb;
+  background: #f7efed;
   color: #b45950;
 }
 .eyebrow {
   display: block;
   color: #7a9283;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1.8px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
   margin-bottom: 7px;
 }
@@ -267,7 +255,7 @@ input::file-selector-button {
 .notice {
   background: #eef5f0;
   border: 1px solid #dfebe2;
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 12px 15px;
   margin: 16px 0;
   color: #577662;
@@ -278,7 +266,7 @@ input::file-selector-button {
   background: #fff1ee;
   border: 1px solid #f1d0c9;
   color: #a64e43;
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 13px;
   display: flex;
   gap: 10px;
@@ -347,10 +335,10 @@ input::file-selector-button {
   margin-bottom: 35px;
 }
 .sidebar-label {
-  font-size: 9px;
+  font-size: 12px;
   color: #a0afa5;
   font-weight: 600;
-  letter-spacing: 1.8px;
+  letter-spacing: 0.8px;
   margin: 0 13px 12px;
 }
 .sidebar nav {
@@ -366,7 +354,7 @@ input::file-selector-button {
   width: 100%;
   padding: 12px 14px;
   color: #718177;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 13px;
 }
 .sidebar nav button:hover {
@@ -378,22 +366,11 @@ input::file-selector-button {
   font-weight: 600;
 }
 .sidebar nav button.active svg {
-  stroke-width: 2.3;
+  stroke-width: 1.75;
 }
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 28px;
-}
-.sidebar-help {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #8ba291;
-  font-size: 10px;
-  background: #f4f8f4;
-  border-radius: 9px;
-  padding: 14px 10px;
-  margin-bottom: 18px;
 }
 .account {
   display: flex;
@@ -410,12 +387,12 @@ input::file-selector-button {
   font-weight: 600;
 }
 .account small {
-  font-size: 10px;
+  font-size: 12px;
 }
 .sidebar-bottom > .text-button {
   padding: 7px 7px;
   color: #85958a;
-  font-size: 11px;
+  font-size: 12px;
 }
 .avatar {
   display: inline-flex;
@@ -430,7 +407,6 @@ input::file-selector-button {
   font-weight: 600;
   flex-shrink: 0;
   border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #e4ece5;
 }
 .avatar.large {
   width: 74px;
@@ -445,7 +421,7 @@ input::file-selector-button {
 .topbar {
   height: 75px;
   border-bottom: 1px solid var(--line);
-  background: #ffffffd9;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -453,7 +429,6 @@ input::file-selector-button {
   position: sticky;
   top: 0;
   z-index: 20;
-  backdrop-filter: blur(10px);
 }
 .breadcrumb {
   display: flex;
@@ -478,7 +453,7 @@ input::file-selector-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: #7a8f80;
 }
 .main-content {
@@ -508,27 +483,17 @@ input::file-selector-button {
 .stat {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 8px;
   padding: 20px 22px;
-  box-shadow: 0 3px 10px #24352d02;
 }
 .stat-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: #7c8d82;
   margin-bottom: 10px;
-}
-.stat-icon {
-  height: 34px;
-  width: 34px;
-  border-radius: 10px;
-  background: #f0f5f0;
-  color: #5f916f;
-  display: grid;
-  place-items: center;
 }
 .stat > strong {
   font-size: 28px;
@@ -541,15 +506,14 @@ input::file-selector-button {
 .stat > small {
   display: block;
   margin-top: 8px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .panel {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 8px;
   padding: 23px;
   margin-bottom: 22px;
-  box-shadow: 0 3px 10px #24352d02;
 }
 .panel-heading {
   display: flex;
@@ -588,7 +552,7 @@ input::file-selector-button {
 }
 .task-icon {
   padding: 11px;
-  border-radius: 11px;
+  border-radius: 8px;
   background: #f2f6ee;
   color: #7d926a;
 }
@@ -601,7 +565,7 @@ input::file-selector-button {
   display: block;
 }
 .task-list small {
-  font-size: 10px;
+  font-size: 12px;
   display: block;
   margin-top: 3px;
 }
@@ -615,7 +579,7 @@ input::file-selector-button {
   flex-direction: column;
   align-items: flex-start;
   padding: 15px;
-  font-size: 11px;
+  font-size: 12px;
   min-height: 91px;
   background: #fafcf9;
   border-color: #e9efe5;
@@ -631,7 +595,7 @@ input::file-selector-button {
   justify-content: space-between;
   padding: 18px 36px;
   border-top: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 12px;
   color: #9cac9f;
 }
 .app-footer span {
@@ -656,7 +620,7 @@ input::file-selector-button {
   min-width: 250px;
   background: #f8faf7;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 0 12px;
   color: #a0afa4;
 }
@@ -664,7 +628,6 @@ input::file-selector-button {
   border: 0;
   background: transparent;
   padding: 10px 0;
-  box-shadow: none;
   font-size: 12px;
 }
 .table-wrap {
@@ -680,7 +643,7 @@ table {
 th {
   background: #f8faf7;
   color: #91a094;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.2px;
   font-weight: 500;
   padding: 13px 13px;
@@ -701,7 +664,7 @@ tbody tr:hover {
   background: #fcfdfb;
 }
 td .text-button {
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .pager {
@@ -712,14 +675,14 @@ td .text-button {
   margin-top: 20px;
 }
 .pager > span {
-  font-size: 10px;
+  font-size: 12px;
   color: #96a498;
   margin-right: auto;
 }
 .pager .button {
   padding: 6px 11px;
   min-height: 31px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .tabs {
   display: flex;
@@ -754,7 +717,7 @@ td .text-button {
 .field small {
   display: block;
   margin-top: 5px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .form-grid {
   display: grid;
@@ -771,7 +734,7 @@ td .text-button {
   margin-bottom: 0;
 }
 .date-filters label {
-  font-size: 10px;
+  font-size: 12px;
   color: #92a295;
 }
 .date-filters input {
@@ -808,7 +771,7 @@ td .text-button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
-  font-size: 11px;
+  font-size: 12px;
   color: #849889;
 }
 .rules-grid strong {
@@ -828,7 +791,7 @@ td .text-button {
   max-height: 290px;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .candidate-list > label {
   display: flex;
@@ -876,7 +839,7 @@ td .text-button {
 }
 .payslip-lines .net {
   background: #edf5ee;
-  border-radius: 9px;
+  border-radius: 8px;
   border: 0;
   padding: 17px 15px;
   margin-top: 14px;
@@ -891,7 +854,6 @@ td .text-button {
   inset: 0;
   z-index: 100;
   background: #1b332b66;
-  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -899,13 +861,12 @@ td .text-button {
 }
 .modal {
   background: #fff;
-  border-radius: 17px;
+  border-radius: 8px;
   width: 690px;
   max-width: 100%;
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   padding: 25px 27px;
-  box-shadow: 0 20px 70px #12271b40;
   overscroll-behavior: contain;
 }
 .modal-heading {
@@ -972,7 +933,7 @@ td .text-button {
 .area-editor {
   border: 1px solid var(--line);
   padding: 18px;
-  border-radius: 11px;
+  border-radius: 8px;
   margin-bottom: 16px;
   background: #fcfdfa;
 }
@@ -1043,7 +1004,7 @@ td .text-button {
   align-items: center;
   justify-content: center;
   gap: 22px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .preview-banner select {
   max-width: 150px;
@@ -1052,17 +1013,17 @@ td .text-button {
   background: #ffffff15;
   color: #fff;
   border-color: #ffffff30;
-  font-size: 11px;
+  font-size: 12px;
 }
 .preview-banner option {
   color: #24352d;
   background: #fff;
 }
 .preview-note {
-  font-size: 11px;
+  font-size: 12px;
   background: #fff9df;
   border: 1px solid #ece3bd;
-  border-radius: 9px;
+  border-radius: 8px;
   color: #9e893c;
   margin-bottom: 22px;
   padding: 9px 14px;
@@ -1083,7 +1044,6 @@ td .text-button {
   margin: auto;
   background: #f2f6f1;
   min-height: 100dvh;
-  box-shadow: 0 0 60px #233b2908;
   position: relative;
 }
 .worker-shell .main-shell {
@@ -1114,11 +1074,11 @@ td .text-button {
   font-size: 23px;
 }
 .worker-shell .page-heading p {
-  font-size: 11px;
+  font-size: 12px;
 }
 .worker-shell .panel {
   padding: 18px;
-  border-radius: 15px;
+  border-radius: 8px;
   margin-bottom: 18px;
 }
 .worker-shell .panel-heading {
@@ -1136,8 +1096,7 @@ td .text-button {
   align-items: center;
   justify-content: space-around;
   z-index: 30;
-  background: #ffffffef;
-  backdrop-filter: blur(10px);
+  background: #fff;
   border-top: 1px solid #e2eadf;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -1147,7 +1106,7 @@ td .text-button {
   align-items: center;
   gap: 5px;
   color: #9caba0;
-  font-size: 10px;
+  font-size: 12px;
   min-width: 64px;
   padding: 9px 4px;
 }
@@ -1156,30 +1115,29 @@ td .text-button {
   font-weight: 600;
 }
 .bottom-nav button.active svg {
-  stroke-width: 2.2;
+  stroke-width: 1.75;
 }
 .worker-greeting {
   margin-bottom: 23px;
 }
 .worker-greeting > span {
   color: #94a78f;
-  font-size: 10px;
+  font-size: 12px;
 }
 .worker-greeting h1 {
   font-size: 24px;
   margin: 7px 0;
 }
 .worker-greeting p {
-  font-size: 11px;
+  font-size: 12px;
   color: #94a78f;
 }
 .shift-card {
   padding: 21px;
   background: #fff;
   border: 1px solid #e3ebdf;
-  border-radius: 16px;
+  border-radius: 8px;
   margin-bottom: 18px;
-  box-shadow: 0 4px 18px #34462604;
 }
 .shift-heading {
   display: flex;
@@ -1189,7 +1147,7 @@ td .text-button {
   gap: 10px;
 }
 .shift-heading .eyebrow {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   margin: 0;
 }
@@ -1199,7 +1157,7 @@ td .text-button {
   margin-bottom: 8px;
 }
 .shift-card > p {
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   gap: 6px;
   align-items: center;
@@ -1212,7 +1170,7 @@ td .text-button {
   gap: 9px;
   background: #f5f8f1;
   padding: 12px 13px;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 10px;
   color: #63835e;
 }
@@ -1224,11 +1182,11 @@ td .text-button {
 }
 .shift-time > span {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 12px;
   color: #91a089;
 }
 .shift-card > small {
-  font-size: 10px;
+  font-size: 12px;
   color: #a0ad9c;
 }
 .shift-actions {
@@ -1237,7 +1195,7 @@ td .text-button {
   margin-top: 17px;
 }
 .shift-actions .button {
-  font-size: 11px;
+  font-size: 12px;
   padding: 10px 9px;
   flex: 1;
 }
@@ -1252,26 +1210,11 @@ td .text-button {
 .map-preview {
   height: 127px;
   border: 1px solid #dce6d8;
-  border-radius: 15px;
+  border-radius: 8px;
   position: relative;
   overflow: hidden;
   margin-bottom: 15px;
-  background:
-    repeating-linear-gradient(
-      38deg,
-      transparent,
-      transparent 42px,
-      #e2eadd 43px,
-      #e2eadd 46px,
-      transparent 47px
-    ),
-    repeating-linear-gradient(
-      125deg,
-      #eff3e7,
-      #eff3e7 49px,
-      #fafbf4 50px,
-      #fafbf4 65px
-    );
+  background: #eef3ed;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1279,27 +1222,19 @@ td .text-button {
   gap: 3px;
   color: #638256;
 }
-.map-preview:after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  box-shadow: inset 0 0 35px #f5f8ee55;
-  pointer-events: none;
-}
 .map-preview > svg {
   background: #fff;
   padding: 6px;
   box-sizing: content-box;
-  border: 5px solid #74a76b33;
+  border: 0;
   border-radius: 50%;
   stroke-width: 1.8;
-  box-shadow: 0 3px 10px #557a4920;
 }
 .map-preview > span {
-  font-size: 10px;
+  font-size: 12px;
   background: #fff;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   z-index: 1;
 }
 .map-preview > small {
@@ -1320,13 +1255,13 @@ td .text-button {
   align-items: flex-start;
   background: #fff;
   border: 1px solid #e2eadd;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 19px;
 }
 .worker-shortcuts svg {
   background: #eef4e7;
   box-sizing: content-box;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 9px;
   color: #7b9866;
   width: 20px;
@@ -1337,7 +1272,7 @@ td .text-button {
   font-size: 13px;
 }
 .worker-shortcuts small {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 4px;
 }
 .worker-links {
@@ -1350,7 +1285,7 @@ td .text-button {
   gap: 10px;
   padding: 14px 0;
   border-top: 1px solid #edf1e9;
-  font-size: 11px;
+  font-size: 12px;
   color: #7d9577;
 }
 .worker-links button:first-child {
@@ -1362,7 +1297,7 @@ td .text-button {
   color: #5f7559;
 }
 .worker-note {
-  font-size: 9px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1378,7 +1313,7 @@ td .text-button {
   flex: 1;
 }
 .worker-shell .date-filters input {
-  font-size: 11px;
+  font-size: 12px;
   padding: 8px;
 }
 .worker-shell .toolbar > .button {
@@ -1413,7 +1348,7 @@ td .text-button {
   font-size: 13px;
 }
 .check-step p {
-  font-size: 10px;
+  font-size: 12px;
   color: #93a18b;
   margin-top: 3px;
 }
@@ -1421,7 +1356,7 @@ td .text-button {
   width: 100%;
   max-height: 280px;
   object-fit: cover;
-  border-radius: 11px;
+  border-radius: 8px;
   background: #293b2d;
   margin-bottom: 12px;
 }
@@ -1441,15 +1376,15 @@ td .text-button {
   overflow: hidden;
 }
 .login-art > .brand,
-.login-art > div:not(.orb),
+.login-art > div,
 .login-art > small {
   position: relative;
   z-index: 1;
 }
 .login-art h1 {
-  font-size: 48px;
+  font-size: 36px;
   line-height: 1.5;
-  letter-spacing: -1.7px;
+  letter-spacing: -0.6px;
   margin: 20px 0;
 }
 .login-art p {
@@ -1459,25 +1394,8 @@ td .text-button {
 }
 .login-art > small {
   letter-spacing: 3px;
-  font-size: 9px;
+  font-size: 12px;
   color: #8ea791;
-}
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  border: 65px solid #bcd2b555;
-  width: 430px;
-  height: 430px;
-  right: -190px;
-  bottom: 90px;
-  transform: rotate(-20deg);
-}
-.orb.two {
-  width: 350px;
-  height: 350px;
-  bottom: -200px;
-  right: 170px;
-  border-color: #c7daba55;
 }
 .login-form {
   flex: 1;
@@ -1496,7 +1414,7 @@ td .text-button {
   max-width: 100%;
 }
 .login-card h1 {
-  font-size: 29px;
+  font-size: 26px;
   margin: 11px 0;
 }
 .login-card > p {
@@ -1516,7 +1434,7 @@ td .text-button {
   gap: 9px;
   padding: 19px 15px;
   border: 1px solid #e1e7e0;
-  border-radius: 11px;
+  border-radius: 8px;
   text-align: left;
   background: #fafcf9;
   color: #92a18e;
@@ -1525,14 +1443,13 @@ td .text-button {
   background: #eef5ec;
   border-color: #769b6c;
   color: #487d43;
-  box-shadow: 0 0 0 2px #8eab8510;
 }
 .platform-options strong {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 .platform-options span {
-  font-size: 9px;
+  font-size: 12px;
   color: #9faf98;
   letter-spacing: 0.5px;
   font-family: Inter, sans-serif;
@@ -1543,7 +1460,7 @@ td .text-button {
   border-color: #06c755;
   font-size: 13px;
   height: 47px;
-  border-radius: 9px;
+  border-radius: 8px;
 }
 .login-card > .button:hover {
   background: #05b24b;
@@ -1558,14 +1475,14 @@ td .text-button {
   color: #a2afa0 !important;
 }
 .login-card > a {
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   justify-content: center;
   color: #8da17f;
 }
 .copyright {
   margin-top: 70px;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.7px;
   color: #afb9aa;
 }
@@ -1605,7 +1522,7 @@ td .text-button {
     padding: 42px;
   }
   .login-art h1 {
-    font-size: 38px;
+    font-size: 32px;
   }
 }
 @media (max-width: 950px) {
@@ -1661,7 +1578,7 @@ td .text-button {
   }
   .breadcrumb {
     margin-right: auto;
-    font-size: 11px;
+    font-size: 12px;
     gap: 9px;
   }
   .mobile-menu {
@@ -1679,7 +1596,7 @@ td .text-button {
     margin-bottom: 22px;
   }
   .page-heading > .button {
-    font-size: 11px;
+    font-size: 12px;
     padding: 8px 12px;
   }
   .page-heading h1 {
@@ -1692,17 +1609,13 @@ td .text-button {
     padding: 16px;
   }
   .stat-top {
-    font-size: 10px;
-  }
-  .stat-icon {
-    width: 28px;
-    height: 28px;
+    font-size: 12px;
   }
   .stat-icon svg {
     width: 17px;
   }
   .stat > small {
-    font-size: 9px;
+    font-size: 12px;
   }
   .panel {
     padding: 18px;
@@ -1747,7 +1660,7 @@ td .text-button {
   .preview-banner {
     padding: 7px 12px;
     gap: 10px;
-    font-size: 9px;
+    font-size: 12px;
     justify-content: space-between;
   }
   .preview-banner select {
@@ -1758,7 +1671,7 @@ td .text-button {
     padding: 0;
   }
   .worker-shell .modal {
-    border-radius: 20px 20px 0 0;
+    border-radius: 12px 12px 0 0;
     max-height: 92dvh;
     padding: 23px 20px calc(23px + env(safe-area-inset-bottom));
   }
@@ -1789,7 +1702,7 @@ td .text-button {
     grid-template-columns: 1fr 1fr;
   }
   .worker-header-title {
-    font-size: 10px;
+    font-size: 12px;
   }
   .login-form {
     padding: 25px;
@@ -1807,7 +1720,7 @@ td .text-button {
     padding: 16px 12px;
   }
   .platform-options strong {
-    font-size: 10px;
+    font-size: 12px;
   }
   .copyright {
     margin-top: 42px;
@@ -1821,4 +1734,77 @@ td .text-button {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Shared visual rhythm; layout and interaction contracts stay unchanged. */
+.lucide {
+  stroke-width: 1.75;
+}
+.button > .lucide,
+.text-button > .lucide {
+  width: 18px;
+  height: 18px;
+}
+.sidebar nav .lucide,
+.bottom-nav .lucide {
+  width: 20px;
+  height: 20px;
+}
+.page-heading p,
+.worker-greeting p,
+.login-card > p {
+  color: var(--muted);
+}
+.stat-top,
+th,
+.field > label,
+.tabs button,
+.profile-details > span {
+  color: var(--muted);
+}
+.stat {
+  padding: 18px 20px;
+}
+.panel {
+  padding: 20px;
+}
+.badge {
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+.quick-grid .button {
+  min-height: 64px;
+  flex-direction: row;
+  align-items: center;
+  font-size: 12px;
+}
+.quick-grid .button svg {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 0;
+}
+.worker-shortcuts svg {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+.worker-shortcuts button {
+  padding: 16px;
+}
+.map-preview {
+  height: 100px;
+}
+.map-preview > span,
+.map-preview > small {
+  background: transparent;
+  font-size: 12px;
+}
+.modal {
+  box-shadow: 0 8px 28px #12271b1a;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
 }

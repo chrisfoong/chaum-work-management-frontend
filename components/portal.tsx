@@ -6,14 +6,12 @@ import {
   FileText,
   Home,
   LayoutDashboard,
-  Leaf,
   LogOut,
   Menu,
   Package,
   PieChart,
   QrCode,
   Settings,
-  ShieldCheck,
   Users,
   Wallet,
   X,
@@ -151,10 +149,6 @@ export function Portal() {
               ))}
             </nav>
             <div className="sidebar-bottom">
-              <div className="sidebar-help">
-                <Leaf size={20} />
-                <span>พื้นที่สีเขียว เติบโตไปด้วยกัน</span>
-              </div>
               <button className="account" onClick={() => navigate("profile")}>
                 <span className="avatar">
                   {user.first_name?.slice(0, 1) || "ช"}
@@ -221,9 +215,7 @@ export function Portal() {
         {!worker && (
           <footer className="app-footer">
             © 2026 ชะอุ่ม · ระบบจัดการงานและพื้นที่สีเขียว{" "}
-            <span>
-              <ShieldCheck size={14} /> {roleName(user.role)}
-            </span>
+            <span>{roleName(user.role)}</span>
           </footer>
         )}
       </div>
@@ -258,7 +250,7 @@ function Dashboard({ navigate }: { navigate: (s: Section) => void }) {
     <>
       <Heading
         eyebrow="WORKSPACE OVERVIEW"
-        title={`สวัสดี ${user.first_name} 👋`}
+        title={`สวัสดี ${user.first_name}`}
         description={
           user.role === "supervisor"
             ? "ภาพรวมโครงการและงานที่รอคุณพิจารณาวันนี้"
@@ -270,25 +262,21 @@ function Dashboard({ navigate }: { navigate: (s: Section) => void }) {
           <Stat
             label="สัญญาที่กำลังดำเนินงาน"
             value={num(stats, "open_contracts")}
-            icon={<FileText size={21} />}
             note="ข้อมูลปัจจุบันจากระบบ"
           />
           <Stat
             label="คำขอลารอพิจารณา"
             value={num(stats, "pending_leave")}
-            icon={<CalendarDays size={21} />}
             note="ผู้ดูแลงานพิจารณาและจัดคนแทน"
           />
           <Stat
             label="คำขออุปกรณ์ค้างดำเนินงาน"
             value={num(stats, "open_requisitions")}
-            icon={<Package size={21} />}
             note="ติดตามความพร้อมของแต่ละพื้นที่"
           />
           <Stat
             label="บทบาทของคุณ"
             value={roleName(user.role)}
-            icon={<Users size={21} />}
             note="สิทธิ์ตรวจสอบจากฐานข้อมูล"
           />
         </div>
