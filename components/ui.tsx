@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import type { API } from "@/lib/api";
+import { tableRowKeys } from "@/lib/table";
 import { notificationInfo } from "@/lib/notification";
 import { dateThai, money } from "@/lib/domain";
 import { num, str, type Row } from "@/lib/types";
@@ -483,6 +484,7 @@ export function Table({
   onRow?: (row: Row) => void;
 }) {
   if (!data.length) return <Empty />;
+  const rowKeys = tableRowKeys(data);
   return (
     <div className="table-wrap">
       <table>
@@ -496,17 +498,7 @@ export function Table({
         </thead>
         <tbody>
           {data.map((r, i) => (
-            <tr
-              key={String(
-                r.schedule_id ||
-                  r.requisition_id ||
-                  r.tor_id ||
-                  r.user_id ||
-                  r.payroll_id ||
-                  r.invoice_id ||
-                  i,
-              )}
-            >
+            <tr key={rowKeys[i]}>
               {columns.map((c) => (
                 <td key={c.key}>
                   {typeof c.format === "function" ? (

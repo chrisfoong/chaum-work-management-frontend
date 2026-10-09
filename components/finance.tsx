@@ -363,7 +363,7 @@ export function Finance() {
       </div>
       {tab === "report" ? (
         <>
-          <div className="toolbar">
+          <div className="toolbar finance-report-filters">
             <Field label="โครงการ">
               <select
                 aria-label="โครงการรายงาน"

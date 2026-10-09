@@ -73,3 +73,24 @@ User previously allowed scoped live application writes in shared Supabase, super
 - [x] Frontend 28 tests, lint, typecheck, production build and formatting passed on the source copy without .env. Backend pre-merge isolated suite 235 tests/subtests, vet/build passed.
 
 Real mobile GPS/camera, real Storage transfer and actual LINE delivery remain separate acceptance checks. UI polish does not establish those results. User authorized pushing and merging both repositories into develop after checks; no deploy.
+
+## Live test follow-up: table identity and LINE expiry (2026-10-09)
+
+- [x] Shared Table prefers record IDs over shared TOR/User foreign keys; repeated IDs receive distinct occurrence keys without dropping rows.
+- [x] Regression covers payroll rows for the same user/TOR, reordered records, repeated IDs and missing IDs.
+- [x] HTTP 401 shows a LINE relogin instruction; no retry or authentication bypass. Mock token-expiry regression passes.
+- [x] Frontend automated tests: 31 pass, 0 fail, 0 skipped; targeted lint passed.
+- [ ] Successful LINE relogin on the affected live screen remains unverified; user must authenticate through LINE.
+
+## LINE login renewal (2026-10-09)
+
+- [x] Explicit Login clears an existing SDK session before requesting LINE authorization, preventing reuse of a rejected cached ID token.
+- [x] Regression covers an existing session and a signed-out Worker redirect. Frontend tests: 33 pass, 0 fail, 0 skipped; targeted lint and typecheck passed.
+- [ ] Actual LINE reauthorization/verified Supervisor login remains pending user login; a fresh-token 401 may still indicate verifier/channel configuration and is not proven fixed by this UI regression.
+
+## Current handoff — 2026-10-10
+
+- [x] Explicit login renewal and LIFF callback routing verified by actual LINE Supervisor/Assistant/Worker login on 9 October; historical pending-login entries above superseded.
+- [x] Paired startup/acceptance guide: SERVER_AND_TEST_STATUS.md; Frontend 5500, Backend 8080, HTTPS LINE tunnel.
+- [x] Frontend rerun: 33 tests, 0 failed/skipped. Backend isolated rerun: 235 tests/subtests, 0 failed/test skips; vet/build passed. Real QR issuance/expiry verified.
+- [ ] Storage, populated business writes, physical GPS+camera check-in/out and actual LINE recipient delivery remain separate live acceptance; empty list reads and mock tests do not establish these.

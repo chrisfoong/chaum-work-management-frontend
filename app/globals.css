@@ -1808,3 +1808,21 @@ textarea:focus {
   outline: 2px solid var(--green);
   outline-offset: 1px;
 }
+
+/* Align report filters on the control baseline without changing other toolbars. */
+.finance-report-filters {
+  align-items: flex-end;
+}
+.finance-report-filters > .field {
+  margin-bottom: 0;
+}
+.finance-report-filters .date-filters {
+  align-items: flex-end;
+}
+.finance-report-filters .date-filters input {
+  margin-top: 7px;
+}
+.finance-report-filters .date-filters > span {
+  align-self: flex-end;
+  padding-bottom: 14px;
+}

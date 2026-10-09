@@ -63,7 +63,7 @@ export class API {
             .join(" · ")
         : "";
       throw new APIError(
-        `${String(error.message || defaultMessage)}${fields ? ` — ${fields}` : ""}`,
+        `${String(response.status === 401 ? "การยืนยันตัวตน LINE ไม่ผ่านหรือหมดอายุ กรุณาออกจากระบบแล้วเข้าสู่ระบบ LINE ใหม่" : error.message || defaultMessage)}${fields ? ` — ${fields}` : ""}`,
         response.status,
         String(error.request_id || response.headers.get("X-Request-ID") || ""),
       );
