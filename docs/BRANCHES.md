@@ -20,3 +20,5 @@ git diff main...feature/frontend-verification
 ```
 
 `feature/frontend-payroll-summary` ต่อจาก `feature/frontend-verification`: แก้ summary/range/Preview/refresh และ regression tests ของ Payroll.
+
+`feature/frontend-live-attendance` ต่อจาก `feature/frontend-payroll-summary`: GPS/QR expiry, Worker overnight homepage, shared LIFF initialization/deadline และ explicit dev tunnel host. Live acceptance ยังรอผู้ใช้ login/config/mobile.

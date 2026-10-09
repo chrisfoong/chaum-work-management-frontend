@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import { gpsProblem, qrExpiry } from "@/lib/attendance";
 import { useSession } from "./auth";
 import {
   ActionForm,
@@ -47,11 +48,11 @@ export function WorkerHome({
   const resource = useData(
     async (signal) => ({
       schedules: await list(
-        `schedules?period_start=${todayBangkok()}&period_end=${todayBangkok()}&limit=50`,
+        `schedules?period_end=${todayBangkok()}&limit=100`,
         signal,
       ),
       attendance: await list(
-        `attendance?period_start=${todayBangkok()}&period_end=${todayBangkok()}&limit=50`,
+        `attendance?period_start=${todayBangkok(new Date(Date.now() - 86400000))}&period_end=${todayBangkok()}&limit=100`,
         signal,
       ),
     }),
@@ -212,7 +213,7 @@ export function CheckIn({
           if (result && active) {
             try {
               setQR(safeQR(result.getText()));
-              setExpires(Date.now() + 60000);
+              setExpires(qrExpiry(result.getText()));
               setScanning(false);
             } catch (e) {
               setError(e instanceof Error ? e.message : "อ่าน QR ไม่สำเร็จ");
@@ -248,7 +249,8 @@ export function CheckIn({
           Number(lng),
         )
       : null;
-  const ready = !!position && !!qr && (!expires || expires > tick);
+  const gpsError = gpsProblem(position, lat, lng);
+  const ready = !gpsError && !!qr && (!expires || expires > tick);
   return (
     <Modal title="ยืนยันและเช็คอิน" onClose={onClose} busy={busy}>
       {done ? (
@@ -315,9 +317,9 @@ export function CheckIn({
                 ? "อ่าน GPS ใหม่"
                 : "ตรวจสอบตำแหน่ง"}
           </Button>
-          {distance !== null && distance > 200 && (
-            <p className="error-box">
-              พิกัดอยู่นอกรัศมี 200 เมตร กรุณาเข้าใกล้พื้นที่และอ่านใหม่
+          {position && gpsError && (
+            <p role="alert" className="error-box">
+              {gpsError}
             </p>
           )}
           <div className="check-step">
@@ -363,7 +365,7 @@ export function CheckIn({
               maxLength={2048}
               onChange={(e) => {
                 setQR(e.target.value);
-                setExpires(null);
+                setExpires(qrExpiry(e.target.value));
               }}
               autoComplete="off"
               spellCheck={false}
@@ -379,7 +381,10 @@ export function CheckIn({
                 setBusy(true);
                 setError("");
                 try {
-                  if (!position) throw new Error("กรุณาตรวจ GPS");
+                  if (!position || gpsError)
+                    throw new Error(gpsError || "กรุณาตรวจ GPS");
+                  if (expires !== null && expires <= Date.now())
+                    throw new Error("QR หมดอายุแล้ว กรุณาสแกนใหม่");
                   await api.post("attendance/check-in", {
                     schedule_id: str(row, "schedule_id"),
                     latitude: position.latitude,

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Clock, MapPin, QrCode, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "./auth";
@@ -742,6 +742,13 @@ export function StaffQR() {
   const [expires, setExpires] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const remaining = Math.max(0, Math.ceil((Date.parse(expires) - now) / 1000));
+  const expired = !!token && (!Number.isFinite(remaining) || remaining === 0);
   return (
     <>
       <Heading
@@ -791,7 +798,14 @@ export function StaffQR() {
         {error && <ErrorBox error={error} />}{" "}
         {token && (
           <div className="qr-output">
-            <QRCodeSVG value={token} size={260} level="M" />
+            {expired ? (
+              <p role="alert" className="error-box">
+                QR หมดอายุแล้ว กรุณากดสร้าง QR ใหม่
+              </p>
+            ) : (
+              <QRCodeSVG value={token} size={260} level="M" />
+            )}
+            {!expired && <strong>เหลือ {remaining} วินาที</strong>}
             <p>หมดอายุ {clock(expires)} น.</p>
             <small>เมื่อหมดอายุ ให้กดสร้าง QR ใหม่</small>
           </div>

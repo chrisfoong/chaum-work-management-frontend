@@ -9,6 +9,7 @@ import {
 } from "react";
 import { ArrowRight, Monitor, ShieldCheck, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { initializeLIFF } from "@/lib/line";
 import { verifiedUser } from "@/lib/session";
 import { API } from "@/lib/api";
 import { object, roleName, type Role, type User } from "@/lib/types";
@@ -67,8 +68,7 @@ export function AuthProvider({
       const id = platformID(platform);
       sessionStorage.setItem("chaum-platform", platform);
       if (!id) throw new Error("ยังไม่ได้ตั้งค่า LIFF ID สำหรับช่องทางนี้");
-      const { default: liff } = await import("@line/liff");
-      await liff.init({ liffId: id });
+      const liff = await initializeLIFF(id);
       if (!liff.isLoggedIn()) {
         if (alive) setLoading(false);
         return;
@@ -163,8 +163,7 @@ export function Login({
           "ยังไม่ได้ตั้งค่า LIFF ID กรุณาให้ผู้ดูแลตั้งค่าระบบก่อน",
         );
       sessionStorage.setItem("chaum-platform", platform);
-      const { default: liff } = await import("@line/liff");
-      await liff.init({ liffId: id });
+      const liff = await initializeLIFF(id);
       const route = platform === "worker" ? "/worker" : "/web";
       if (liff.isLoggedIn()) router.push(route);
       else liff.login({ redirectUri: `${window.location.origin}${route}` });

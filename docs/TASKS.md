@@ -19,7 +19,7 @@
 - [x] lint / typecheck / unit + API + proxy tests / production build / format
 - [x] Browser preview ทุกเมนู Web และ Worker; desktop/mobile layouts
 
-Unit/API/proxy tests 24 ผ่าน, fail 0, skip 0. Browser smoke ตรวจ 8 เมนู Supervisor, 6 เมนู Assistant, 4 เมนู Worker; TOR dialog, 9A ไม่มี financials, CheckIn disabled ก่อนมี GPS/QR และ Preview บล็อก mutation. ไม่พบ console error ใน Preview
+Unit/API/proxy tests 27 ผ่าน, fail 0, skip 0. Browser smoke ตรวจ 8 เมนู Supervisor, 6 เมนู Assistant, 4 เมนู Worker; TOR dialog, 9A ไม่มี financials, CheckIn disabled ก่อนมี GPS/QR และ Preview บล็อก mutation. ไม่พบ console error ใน Preview
 
 Production build ใช้สำเนา source ที่ตรง repo ในพื้นที่ทดสอบซึ่งไม่มี `.env` เพื่อรักษาข้อห้ามอ่านไฟล์ลับ. Baseline starter ก่อนแก้ lint/build ผ่าน. Typecheck ใน repo รอบแรกติดสิทธิ์เขียน cache tsbuildinfo; ใช้ `--incremental false` เพื่อตรวจโดยไม่เขียน cache
 
@@ -34,7 +34,7 @@ Production build ใช้สำเนา source ที่ตรง repo ใน�
 
 5S เอกสารของ Backend ที่ผู้ใช้ให้เลื่อนไว้ไม่ได้แก้ในรอบ Frontend. 6W ไม่มีหน้าเว็บเพิ่ม ใช้ LINE Chat. การส่ง/อ่าน 9A ไม่มีที่เก็บโดยตั้งใจ; accepted ไม่เท่ากับ delivered/read. ไม่มี deploy/push ในรอบนี้
 
-Backend Worker schedule list จำกัด work_date ตั้งแต่วันนี้. เวลาสิ้นสุดกะข้ามคืนแสดงจาก API ได้ แต่การค้นกะของวันก่อนหลังเที่ยงคืนยังต้องทวน read model ของ Backend บนฐานทดสอบ; Frontend ไม่ข้าม ownership หรือสร้างข้อมูลตารางเอง
+Backend feature/worker-overnight-read-model เพิ่มกะวันก่อนที่ยังไม่สิ้นสุดโดยคง ownership; หน้า Worker โหลดกะที่ยังดำเนินอยู่และ attendance วันก่อนด้วย. Regression ผ่านบน isolated DB; Backend process ที่รันจริงยังต้อง restart เพื่อใช้ revision ใหม่นี้
 
 ## Payroll summary follow-up (2026-10-09)
 
@@ -45,3 +45,11 @@ Backend Worker schedule list จำกัด work_date ตั้งแต่ว�
 - [x] Tests รวมเกิน 50 แถว/พนักงานซ้ำ/สตางค์/ยอดผิดรูปแบบ/ข้ามรอบ/Preview filter
 
 ยอด Preview เป็นข้อมูลสมมติเท่านั้น; ยังไม่ตรวจ live Supabase/LINE ของ frontend นี้ และไม่สร้างสลิปในฐานจริงเพื่อแก้หน้าจอ Preview
+
+## Live attendance preparation
+
+- [x] GPS gate matches Backend <=50m accuracy and <=200m radius; invalid/missing TOR coordinates block client submission.
+- [x] QR countdown uses issued expiry; expired Staff QR hidden and Worker QR blocked; Backend remains signature authority.
+- [x] Shared LIFF initialization and timeout prevent duplicate initialization/infinite loading, no auth bypass.
+- [x] Configurable explicit FRONTEND_DEV_HOST for owned development tunnel.
+- [ ] Live login/upload/check-in/out/LINE delivery still pending actual configuration and human mobile steps. See LIVE_ACCEPTANCE.md.
