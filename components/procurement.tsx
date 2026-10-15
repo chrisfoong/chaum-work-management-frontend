@@ -23,6 +23,7 @@ import {
   itemRows,
   useData,
 } from "./ui";
+import { retryOptions, procurementNextStep } from "@/lib/procurement-guidance";
 import { decimal, money, satang } from "@/lib/domain";
 import { num, object, rows, str, type Row } from "@/lib/types";
 type Action =
@@ -276,7 +277,7 @@ function RequisitionDetail({ row, onBack }: { row: Row; onBack: () => void }) {
               />
               {!rows(object(inspection.data).tor_requirements).length && (
                 <p className="muted">
-                  รายละเอียดการตรวจสอบอ้างอิงรายการ TOR จาก Backend
+                  เปรียบเทียบรายการที่ขอกับอุปกรณ์ตามสัญญา
                 </p>
               )}
             </Resource>
@@ -319,6 +320,11 @@ function RequisitionDetail({ row, onBack }: { row: Row; onBack: () => void }) {
         <ProcurementAction
           action={action}
           row={r}
+          delivered={
+            !deliveries.loading &&
+            !deliveries.error &&
+            !!deliveries.data?.length
+          }
           onClose={() => setAction("")}
           onDone={() => {
             resource.refresh();
@@ -332,15 +338,25 @@ function RequisitionDetail({ row, onBack }: { row: Row; onBack: () => void }) {
 function ProcurementAction({
   action,
   row,
+  delivered = false,
   onClose,
   onDone,
 }: {
   action: Action;
   row: Row;
+  delivered?: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
-  const { api, list } = useSession();
+  const { api, list, user } = useSession();
+  const allowedRetries = retryOptions(row, user.user_id, delivered);
+  const [selectedRetry, setSelectedRetry] = useState("");
+  const retryKind = allowedRetries.some(
+    (option) => option.value === selectedRetry,
+  )
+    ? selectedRetry
+    : allowedRetries[0]?.value || "";
+  const nextStep = procurementNextStep(row, delivered);
   const id = str(row, "requisition_id");
   const items = itemRows(row);
   const schedules = useData(
@@ -368,6 +384,8 @@ function ProcurementAction({
       title={titles[action] || ""}
       onClose={onClose}
       onDone={onDone}
+      submitDisabled={action === "retry" && allowedRetries.length === 0}
+      submitLabel={action === "retry" ? "ส่งแจ้งเตือนอีกครั้ง" : "ยืนยันบันทึก"}
       submit={async (fd) => {
         const base = `requisitions/${id}`;
         if (action === "survey")
@@ -414,10 +432,26 @@ function ProcurementAction({
             photo_paths: paths,
           });
         }
-        return api.post(`notifications/${id}/retry`, {
-          kind: fdString(fd, "kind"),
-          reason: fdString(fd, "reason"),
-        });
+        if (!retryKind) throw new Error(nextStep);
+        try {
+          return await api.post(`notifications/${id}/retry`, {
+            kind: retryKind,
+            reason: fdString(fd, "reason"),
+          });
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes(
+              "notification does not match committed business state",
+            )
+          ) {
+            onDone();
+            throw new Error(
+              "ยังส่งเหตุการณ์นี้ไม่ได้ หรือสถานะคำขอเปลี่ยนแล้ว กรุณาปิดหน้าต่าง ตรวจสถานะล่าสุด และดำเนินการตามขั้นตอนที่แสดง",
+            );
+          }
+          throw error;
+        }
       }}
     >
       {action === "survey" && (
@@ -552,31 +586,49 @@ function ProcurementAction({
       )}
       {action === "retry" && (
         <>
-          <Inputs
-            fields={[
-              {
-                name: "kind",
-                label: "เหตุการณ์แจ้งเตือน",
-                options: [
-                  { value: "no_purchase", label: "ไม่ต้องจัดซื้อ" },
-                  { value: "delivery", label: "ส่งมอบแล้ว" },
-                  { value: "approval_needed", label: "รออนุมัติ" },
-                  { value: "purchase_funding", label: "รอเงินจัดซื้อ" },
-                ],
-              },
-              {
-                name: "reason",
-                label: "เหตุผลเดิม (กรณีไม่ซื้อ)",
-                type: "textarea",
-                required: false,
-                maxLength: 1000,
-              },
-            ]}
-          />
-          <p className="notice">
-            ไม่บันทึกงานซ้ำ และไม่มีประวัติส่ง/อ่านถาวร การตอบรับจาก LINE
-            ไม่ใช่หลักฐานว่าผู้รับอ่านแล้ว
-          </p>
+          <div className="notice" role="status" style={{ display: "block" }}>
+            <p>
+              <strong>สถานะคำขอปัจจุบัน</strong> <Badge value={row.status} />
+            </p>
+            <p>{nextStep}</p>
+          </div>
+          {allowedRetries.length > 0 ? (
+            <>
+              <Field label="เหตุการณ์ที่ส่งซ้ำได้ตอนนี้">
+                <select
+                  aria-label="เหตุการณ์ที่ส่งซ้ำได้ตอนนี้"
+                  value={retryKind}
+                  onChange={(e) => setSelectedRetry(e.target.value)}
+                >
+                  {allowedRetries.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {retryKind === "no_purchase" && (
+                <Inputs
+                  fields={[
+                    {
+                      name: "reason",
+                      label: "เหตุผลเดิมที่ไม่จัดซื้อ",
+                      type: "textarea",
+                      required: true,
+                      maxLength: 1000,
+                    },
+                  ]}
+                />
+              )}
+              <p className="muted">
+                ส่งเฉพาะข้อความ LINE อีกครั้ง ไม่บันทึกจัดซื้อหรือส่งมอบซ้ำ
+              </p>
+            </>
+          ) : (
+            <p role="alert">
+              ยังไม่มีเหตุการณ์ที่ส่งซ้ำได้ กรุณาดำเนินการขั้นตอนข้างต้นก่อน
+            </p>
+          )}
         </>
       )}
     </ActionForm>
@@ -626,7 +678,7 @@ function PurchaseForm({
       ) : review && payload ? (
         <>
           <p className="notice">
-            ตรวจสอบยอดก่อนยืนยัน ระบบยังไม่ได้บันทึกค่าใช้จ่าย
+            ตรวจสอบจำนวนและค่าใช้จ่ายก่อนยืนยันการจัดซื้อ
           </p>
           <Table
             data={rows(review.items)}

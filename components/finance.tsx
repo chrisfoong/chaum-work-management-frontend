@@ -64,7 +64,7 @@ export function Payroll() {
   return (
     <>
       <Heading
-        eyebrow="PAYROLL · 4S / 5S"
+        eyebrow="PAYROLL"
         title="ค่าจ้างและเงินหัก"
         description="ประมวลผลการเข้างานก่อนสรุปค่าจ้าง ยอดสุทธิไม่ต่ำกว่า 0"
         action={
@@ -343,7 +343,7 @@ export function Finance() {
   return (
     <>
       <Heading
-        eyebrow="FINANCE · 6S"
+        eyebrow="FINANCE"
         title="ต้นทุนและกำไร"
         description="รายรับเงินจริง ค่าแรงที่จ่าย และค่าใช้จ่ายจัดซื้อ ตามช่วงที่เลือก"
       />
@@ -411,8 +411,9 @@ export function Finance() {
                 onRow={setFinancialRow}
               />
               <p className="notice">
-                ค่าแรงจัดสรรตามวันทำงาน เป็นยอดประมาณการ ไม่รวม fund_transfer
-                ซ้ำเป็นต้นทุน รายงานเปลี่ยนตามการแก้ข้อมูลย้อนหลัง
+                ค่าแรงเป็นยอดประมาณการตามวันทำงาน
+                รายงานอัปเดตตามข้อมูลการรับเงิน การจ่ายค่าจ้าง
+                และค่าใช้จ่ายจัดซื้อ
               </p>
               <div className="action-bar">
                 <Button
@@ -632,13 +633,12 @@ export function Finance() {
             รอบ {start} ถึง {end}
           </p>
           <label className="checkbox-line">
-            <input type="checkbox" required /> ตรวจสอบผลประมวลผล 5S
-            และผลประกอบการ 6S แล้ว
+            <input type="checkbox" required /> ตรวจสอบค่าจ้างและผลประกอบการแล้ว
           </label>
           <p className="notice">
             {action === "notify"
-              ? "ส่งเฉพาะข้อความสั้นและลิงก์ไปหน้า Assistant ไม่มีตัวเลขการเงิน ไม่มีประวัติส่ง/อ่าน"
-              : "คำนวณข้อมูลปัจจุบัน ไม่บันทึก Snapshot และไม่สิ้นสุดสัญญา"}
+              ? "แจ้งผู้ดูแลงานผ่าน LINE พร้อมลิงก์สรุปการดำเนินงาน"
+              : "ยืนยันการตรวจสอบผลประกอบการจากข้อมูลล่าสุด"}
           </p>
         </ActionForm>
       )}

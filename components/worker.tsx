@@ -10,6 +10,12 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import {
+  equipmentOptions,
+  canAddEquipment,
+  checkoutTimeReached,
+} from "@/lib/worker-actions";
+import { eligibleLeaveDates, leaveForSchedule } from "@/lib/leave";
 import { gpsProblem, qrExpiry } from "@/lib/attendance";
 import { useSession } from "./auth";
 import {
@@ -51,6 +57,10 @@ export function WorkerHome({
         `schedules?period_end=${todayBangkok()}&limit=100`,
         signal,
       ),
+      leaves: await list(
+        `leave-requests?period_start=${todayBangkok(new Date(Date.now() - 86400000))}&period_end=${todayBangkok()}&limit=100`,
+        signal,
+      ),
       attendance: await list(
         `attendance?period_start=${todayBangkok(new Date(Date.now() - 86400000))}&period_end=${todayBangkok()}&limit=100`,
         signal,
@@ -87,6 +97,8 @@ export function WorkerHome({
                 </div>
                 <ScheduleCard
                   row={r}
+                  attendance={att}
+                  leave={leaveForSchedule(r, resource.data?.leaves || [])}
                   onCheckIn={
                     att?.check_in
                       ? undefined
@@ -423,12 +435,21 @@ export function Checkout({
   onDone: () => void;
 }) {
   const { api } = useSession();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+  const timeReached = checkoutTimeReached(row, now);
   return (
     <ActionForm
       title="ส่งผลงานและเช็คเอาท์"
       onClose={onClose}
       onDone={onDone}
+      submitDisabled={!timeReached}
       submit={async (fd) => {
+        if (!checkoutTimeReached(row, Date.now()))
+          throw new Error("ยังไม่ถึงเวลาจบกะ กรุณาเช็กเอาท์ตามเวลาที่แสดง");
         const photo = await fileFrom(fd, "photo", api);
         return api.post("attendance/check-out", {
           schedule_id: str(row, "schedule_id"),
@@ -440,6 +461,12 @@ export function Checkout({
       <p>
         {str(row, "project_name")} · {str(row, "location_name")}
       </p>
+      {!timeReached && (
+        <p className="notice" role="alert">
+          ยังไม่ถึงเวลาจบกะ เช็กเอาท์ได้เวลา {clock(str(row, "shift_end_at"))} ·{" "}
+          {dateThai(str(row, "shift_end_at"))}
+        </p>
+      )}
       <Inputs
         fields={[
           {
@@ -474,44 +501,80 @@ function WorkerLeave({
   onDone: () => void;
 }) {
   const { api, list } = useSession();
-  const resource = useData((signal) => list("schedules?limit=100", signal), []);
-  const dates = [
-    ...new Set(
-      (resource.data || [])
-        .filter(
-          (r) => r.shift_status === "scheduled" || r.status === "scheduled",
-        )
-        .map((r) => str(r, "work_date").slice(0, 10)),
-    ),
-  ];
+  const resource = useData(async (signal) => {
+    const [schedules, leaves] = await Promise.all([
+      list("schedules?limit=100", signal),
+      list(`leave-requests?period_start=${todayBangkok()}&limit=100`, signal),
+    ]);
+    return { schedules, leaves };
+  }, []);
+  const dates = eligibleLeaveDates(
+    resource.data?.schedules || [],
+    resource.data?.leaves || [],
+    todayBangkok(),
+  );
+
   return (
     <ActionForm
       title="แจ้งลา"
       onClose={onClose}
       onDone={onDone}
-      submit={(fd) =>
-        api.post("leave-requests", {
-          leave_date: fdString(fd, "date"),
-          reason: fdString(fd, "reason"),
-        })
-      }
+      submitDisabled={!resource.data || dates.length === 0}
+      submit={async (fd) => {
+        const date = fdString(fd, "date");
+        if (!dates.includes(date))
+          throw new Error("วันที่นี้ยื่นใบลาแล้ว หรือไม่มีกะงานที่แจ้งลาได้");
+        try {
+          return await api.post("leave-requests", {
+            leave_date: date,
+            reason: fdString(fd, "reason"),
+          });
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes("leave already exists for date")
+          ) {
+            resource.refresh();
+            throw new Error("คุณยื่นใบลาสำหรับวันนี้แล้ว ไม่สามารถยื่นซ้ำได้");
+          }
+          throw error;
+        }
+      }}
     >
       <Resource {...resource} retry={resource.refresh}>
-        <Inputs
-          fields={[
-            {
-              name: "date",
-              label: "วันที่มีกะงาน",
-              options: dates.map((d) => ({ value: d, label: dateThai(d) })),
-            },
-            {
-              name: "reason",
-              label: "เหตุผลการลา",
-              type: "textarea",
-              maxLength: 500,
-            },
-          ]}
-        />
+        {dates.length > 0 ? (
+          <Inputs
+            fields={[
+              {
+                name: "date",
+                label: "วันที่มีกะงาน",
+                options: dates.map((d) => ({ value: d, label: dateThai(d) })),
+              },
+              {
+                name: "reason",
+                label: "เหตุผลการลา",
+                type: "textarea",
+                maxLength: 500,
+              },
+            ]}
+          />
+        ) : (
+          <Empty
+            text="ไม่มีกะงานที่แจ้งลาได้"
+            detail="วันที่ยื่นใบลาแล้วจะไม่แสดงให้ยื่นซ้ำ แม้คำขอถูกปฏิเสธ"
+          />
+        )}
+        {resource.data?.leaves.length ? (
+          <div className="notice">
+            <strong>ใบลาที่ส่งแล้ว</strong>
+            {resource.data.leaves.map((leave) => (
+              <p key={str(leave, "request_id")}>
+                {dateThai(str(leave, "leave_date"))} ·{" "}
+                <Badge value={leave.status} />
+              </p>
+            ))}
+          </div>
+        ) : null}
       </Resource>
       <p className="notice">
         วันอนาคตเป็นลาล่วงหน้า วันปัจจุบันเป็นลาฉุกเฉิน
@@ -530,7 +593,6 @@ function Shortage({
   const { api, list } = useSession();
   const resource = useData(
     async (signal) => ({
-      equipment: await list("equipment?limit=100", signal),
       schedules: await list(
         `schedules?period_start=${todayBangkok()}&period_end=${todayBangkok()}&limit=50`,
         signal,
@@ -539,17 +601,49 @@ function Shortage({
     [],
   );
   const [items, setItems] = useState([{ key: 1, equipment: "", qty: "1" }]);
+  const [selectedAssignment, setSelectedAssignment] = useState("");
+  const assignment =
+    selectedAssignment || str(resource.data?.schedules[0], "assignment_id");
+  const equipment = useData(
+    async (signal) => ({
+      assignment,
+      items: assignment
+        ? await list(`equipment?assignment_id=${assignment}&limit=100`, signal)
+        : [],
+    }),
+    [assignment],
+  );
+  const available =
+    equipment.data?.assignment === assignment ? equipment.data.items : [];
+
   return (
     <ActionForm
       title="แจ้งอุปกรณ์ไม่พอ"
       onClose={onClose}
       onDone={onDone}
+      submitDisabled={
+        !assignment ||
+        equipment.loading ||
+        !!equipment.error ||
+        available.length === 0
+      }
       submit={(fd) => {
+        if (
+          equipment.loading ||
+          equipment.error ||
+          items.some(
+            (item) =>
+              !available.some(
+                (row) => str(row, "equipment_id") === item.equipment,
+              ),
+          )
+        )
+          throw new Error("กรุณาเลือกอุปกรณ์ใน TOR ของพื้นที่นี้");
         const selected = new Set(items.map((i) => i.equipment));
         if (selected.size !== items.length)
           throw new Error("กรุณาเลือกอุปกรณ์แต่ละชนิดเพียงครั้งเดียว");
         return api.post("requisitions", {
-          assignment_id: fdString(fd, "assignment"),
+          assignment_id: assignment,
           reason: fdString(fd, "reason"),
           items: items.map((i) => ({
             equipment_id: i.equipment,
@@ -560,50 +654,77 @@ function Shortage({
       }}
     >
       <Resource {...resource} retry={resource.refresh}>
-        <Inputs
-          fields={[
-            {
-              name: "assignment",
-              label: "พื้นที่กะวันนี้",
-              options: [
-                ...new Map(
-                  (resource.data?.schedules || []).map((r) => [
-                    str(r, "assignment_id"),
-                    {
-                      value: str(r, "assignment_id"),
-                      label: str(r, "location_name"),
-                    },
-                  ]),
-                ).values(),
-              ],
-            },
-          ]}
-        />
+        <Field label="พื้นที่กะวันนี้">
+          <select
+            name="assignment"
+            aria-label="พื้นที่กะวันนี้"
+            required
+            value={assignment}
+            onChange={(event) => {
+              setSelectedAssignment(event.target.value);
+              setItems([{ key: 1, equipment: "", qty: "1" }]);
+            }}
+          >
+            <option value="">เลือกพื้นที่</option>
+            {[
+              ...new Map(
+                (resource.data?.schedules || []).map((r) => [
+                  str(r, "assignment_id"),
+                  r,
+                ]),
+              ).values(),
+            ].map((r) => (
+              <option
+                key={str(r, "assignment_id")}
+                value={str(r, "assignment_id")}
+              >
+                {str(r, "project_name")} · {str(r, "location_name")}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {equipment.error && <ErrorBox error={equipment.error} />}
+        <p className="muted">
+          {equipment.loading
+            ? "กำลังโหลดอุปกรณ์ของ TOR…"
+            : "แสดงเฉพาะอุปกรณ์ใน TOR ของพื้นที่ที่เลือก"}
+        </p>
+        {!equipment.loading &&
+          assignment &&
+          available.length === 0 &&
+          !equipment.error && <Empty text="ยังไม่มีอุปกรณ์ใน TOR นี้" />}
         {items.map((it, index) => (
           <div className="item-editor" key={it.key}>
             <select
               aria-label={`อุปกรณ์ ${index + 1}`}
               required
-              value={it.equipment}
-              onChange={(e) =>
-                setItems((v) =>
-                  v.map((r, i) =>
-                    i === index ? { ...r, equipment: e.target.value } : r,
-                  ),
-                )
+              disabled={
+                equipment.loading || !!equipment.error || available.length === 0
               }
+              value={it.equipment}
+              onChange={(e) => {
+                const value = e.target.value;
+                setItems((v) =>
+                  v.some(
+                    (item, i) =>
+                      i !== index && value !== "" && item.equipment === value,
+                  )
+                    ? v
+                    : v.map((r, i) =>
+                        i === index ? { ...r, equipment: value } : r,
+                      ),
+                );
+              }}
             >
               <option value="">เลือกอุปกรณ์</option>
-              {resource.data?.equipment
-                .filter((r) => r.is_active !== false)
-                .map((r) => (
-                  <option
-                    key={str(r, "equipment_id")}
-                    value={str(r, "equipment_id")}
-                  >
-                    {str(r, "equipment_name")}
-                  </option>
-                ))}
+              {equipmentOptions(available, items, index).map((r) => (
+                <option
+                  key={str(r, "equipment_id")}
+                  value={str(r, "equipment_id")}
+                >
+                  {str(r, "equipment_name")}
+                </option>
+              ))}
             </select>
             <input
               aria-label={`จำนวน ${index + 1}`}
@@ -633,11 +754,17 @@ function Shortage({
         ))}
         <Button
           variant="secondary"
+          disabled={
+            equipment.loading ||
+            !!equipment.error ||
+            !canAddEquipment(available, items)
+          }
           onClick={() =>
-            setItems((v) => [
-              ...v,
-              { key: Date.now(), equipment: "", qty: "1" },
-            ])
+            setItems((v) =>
+              canAddEquipment(available, v)
+                ? [...v, { key: Date.now(), equipment: "", qty: "1" }]
+                : v,
+            )
           }
         >
           + เพิ่มอุปกรณ์

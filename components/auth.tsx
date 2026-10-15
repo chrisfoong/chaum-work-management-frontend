@@ -7,12 +7,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ArrowRight, Monitor, ShieldCheck, Smartphone } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { initializeLIFF, startLINELogin } from "@/lib/line";
 import { verifiedUser } from "@/lib/session";
 import { API } from "@/lib/api";
 import { object, roleName, type Role, type User } from "@/lib/types";
+import { InvitationPage } from "./invitation";
+import {
+  captureInvitation,
+  invitationPlatformFromURL,
+  clearInvitation,
+  invitationLoginRedirect,
+} from "@/lib/invitation";
 import { previewList, previewUser, previewGet } from "@/lib/preview";
 import { Brand, Button, ErrorBox, Loading } from "./ui";
 type Session = {
@@ -53,6 +60,10 @@ export function AuthProvider({
   const [api, setAPI] = useState<API | null>(
     previewRole ? new API(previewRole, () => null, true) : null,
   );
+  const [onboarding, setOnboarding] = useState<{
+    api: API;
+    token: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(!previewRole);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -67,7 +78,11 @@ export function AuthProvider({
       }
       const id = platformID(platform);
       sessionStorage.setItem("chaum-platform", platform);
-      if (!id) throw new Error("ยังไม่ได้ตั้งค่า LIFF ID สำหรับช่องทางนี้");
+      if (!id)
+        throw new Error(
+          "ช่องทางเข้าสู่ระบบนี้ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ",
+        );
+      captureInvitation();
       const liff = await initializeLIFF(id);
       if (!liff.isLoggedIn()) {
         if (alive) setLoading(false);
@@ -76,12 +91,42 @@ export function AuthProvider({
       const token = () => liff.getIDToken();
       if (!token())
         throw new Error(
-          "ไม่พบ LINE ID token กรุณาเปิด scope openid ใน LIFF และเข้าสู่ระบบใหม่",
+          "ช่องทางเข้าสู่ระบบนี้ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ",
         );
       const client = new API(
         platform === "worker" ? "worker" : "supervisor",
         token,
       );
+      const invitation = captureInvitation();
+      const state = object(await client.get("onboarding"));
+      if (state.status === "inactive")
+        throw new Error("บัญชีถูกระงับ กรุณาติดต่อผู้ควบคุมงาน");
+      if (state.status === "unregistered") {
+        if (alive) setOnboarding({ api: client, token: invitation });
+        return;
+      }
+      if (state.status !== "registered")
+        throw new Error("ตรวจสถานะบัญชีไม่สำเร็จ กรุณาลองใหม่");
+      if (invitation) {
+        clearInvitation();
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+      const destination = state.platform;
+      if (
+        (destination === "worker" || destination === "web") &&
+        destination !== platform
+      ) {
+        const destinationID = platformID(destination);
+        if (!destinationID)
+          throw new Error("ช่องทางเข้าสู่ระบบยังไม่พร้อมใช้งาน");
+        sessionStorage.setItem("chaum-platform", destination);
+        window.location.replace(
+          destination === "worker"
+            ? `https://miniapp.line.me/${destinationID}`
+            : `https://liff.line.me/${destinationID}`,
+        );
+        return;
+      }
       const me = verifiedUser(await client.get("me"), platform);
       client.role = me.role;
       if (alive) {
@@ -124,6 +169,7 @@ export function AuthProvider({
               }
               import("@line/liff").then(({ default: liff }) => {
                 liff.logout();
+                clearInvitation();
                 sessionStorage.removeItem("chaum-platform");
                 router.replace("/");
               });
@@ -134,11 +180,15 @@ export function AuthProvider({
   );
   if (loading)
     return (
-      <div className="login-screen">
-        <Brand />
-        <Loading />
-      </div>
+      <main className="auth-loading-screen" aria-label="กำลังเข้าสู่ระบบ">
+        <div className="auth-loading-content">
+          <Brand />
+          <Loading />
+        </div>
+      </main>
     );
+  if (onboarding)
+    return <InvitationPage api={onboarding.api} token={onboarding.token} />;
   if (!value) return <Login error={error} defaultPlatform={entryPlatform} />;
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
@@ -156,12 +206,27 @@ export function Login({
     const params = new URLSearchParams(window.location.search);
     if (!params.has("liff.state") && !params.has("liffClientId")) return;
     let alive = true;
-    const stored = sessionStorage.getItem("chaum-platform");
-    const callbackPlatform = stored === "worker" ? "worker" : defaultPlatform;
+    const invitedPlatform = invitationPlatformFromURL(window.location.href);
+    const stored = invitedPlatform || sessionStorage.getItem("chaum-platform");
+    captureInvitation();
+    const callbackChannel = params.get("liffClientId");
+    const workerChannel = platformID("worker")?.split("-")[0];
+    const webChannel = platformID("web")?.split("-")[0];
+    const callbackPlatform =
+      callbackChannel === workerChannel
+        ? "worker"
+        : callbackChannel === webChannel
+          ? "web"
+          : stored === "worker"
+            ? "worker"
+            : defaultPlatform;
+    sessionStorage.setItem("chaum-platform", callbackPlatform);
     const id = platformID(callbackPlatform);
     if (!id) return;
     initializeLIFF(id)
       .then((liff) => {
+        if (alive) setPlatform(callbackPlatform);
+        captureInvitation();
         if (alive && liff.isLoggedIn())
           window.location.replace(
             callbackPlatform === "worker" ? "/worker" : "/web",
@@ -185,77 +250,51 @@ export function Login({
       const id = platformID(platform);
       if (!id)
         throw new Error(
-          "ยังไม่ได้ตั้งค่า LIFF ID กรุณาให้ผู้ดูแลตั้งค่าระบบก่อน",
+          "ช่องทางเข้าสู่ระบบนี้ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ",
         );
       sessionStorage.setItem("chaum-platform", platform);
       const liff = await initializeLIFF(id);
-      const route = platform === "worker" ? "/worker" : "/web";
-      startLINELogin(liff, `${window.location.origin}${route}`);
+      startLINELogin(
+        liff,
+        invitationLoginRedirect(
+          window.location.origin,
+          platform,
+          captureInvitation(),
+        ),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
       setBusy(false);
     }
   }
   return (
-    <main className="login-screen">
-      <div className="login-art">
+    <main className="login-entry-screen">
+      <section className="login-entry-panel" aria-labelledby="login-title">
         <Brand />
-        <div>
-          <span className="eyebrow">ดูแลงาน ดูแลคน ดูแลพื้นที่สีเขียว</span>
-          <h1>
-            ทุกงานเติบโต
-            <br />
-            ด้วยการดูแลที่ดี
-          </h1>
-          <p>
-            จัดการทีมงานและพื้นที่ของคุณ
-            <br />
-            ในระบบเดียวกับชะอุ่ม
-          </p>
-        </div>
-        <small>CHAUM · WORK MANAGEMENT</small>
-      </div>
-      <section className="login-form">
-        <Brand />
-        <div className="login-card">
+        <div className="login-entry-heading">
           <span className="eyebrow">ยินดีต้อนรับ</span>
-          <h1>เข้าสู่ระบบชะอุ่ม</h1>
-          <p>เลือกช่องทางเพื่อเข้าสู่ระบบด้วยบัญชี LINE</p>
-          <div className="platform-options">
-            <button
-              className={platform === "web" ? "selected" : ""}
-              onClick={() => setPlatform("web")}
-            >
-              <Monitor />
-              <strong>ผู้ควบคุม / ผู้ดูแลงาน</strong>
-              <span>Web Application</span>
-            </button>
-            <button
-              className={platform === "worker" ? "selected" : ""}
-              onClick={() => setPlatform("worker")}
-            >
-              <Smartphone />
-              <strong>พนักงาน</strong>
-              <span>LINE Mini App</span>
-            </button>
-          </div>
-          {error && <ErrorBox error={error} />}
-          <Button disabled={busy} onClick={login}>
-            {busy ? "กำลังเชื่อมต่อ…" : "เข้าสู่ระบบด้วย LINE"}
-            <ArrowRight size={18} />
-          </Button>
-          <p className="secure-note">
-            <ShieldCheck size={15} /> บทบาทและสิทธิ์ตรวจสอบจากระบบส่วนกลาง
+          <h1 id="login-title">เข้าสู่ระบบชะอุ่ม</h1>
+          <p>
+            จัดการงานและพื้นที่สีเขียวของคุณ
+            <br />
+            เข้าสู่ระบบด้วยบัญชี LINE เพื่อเริ่มใช้งาน
           </p>
-          <a className="text-button" href="/preview">
-            ดูตัวอย่างหน้าจอ
-          </a>
         </div>
-        <small className="copyright">© 2026 Chaum Work Management</small>
+        {error && <ErrorBox error={error} />}
+        <Button disabled={busy} onClick={login}>
+          {busy ? "กำลังเชื่อมต่อ LINE…" : "เข้าสู่ระบบด้วย LINE"}
+          {!busy && <ArrowRight size={18} />}
+        </Button>
+        <p className="login-entry-note">
+          <ShieldCheck size={16} />
+          สิทธิ์การใช้งานตามบัญชีที่ได้รับเชิญ
+        </p>
       </section>
+      <small className="login-entry-footer">© 2026 Chaum Work Management</small>
     </main>
   );
 }
+
 export function PreviewPicker({
   role,
   setRole,
@@ -265,7 +304,7 @@ export function PreviewPicker({
 }) {
   return (
     <div className="preview-banner">
-      <span>ตัวอย่างหน้าจอ · ข้อมูลสมมติ · ไม่บันทึกข้อมูล</span>
+      <span>ตัวอย่างหน้าจอ — ไม่บันทึกข้อมูล</span>
       <select
         aria-label="บทบาทตัวอย่าง"
         value={role}

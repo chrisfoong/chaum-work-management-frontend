@@ -1,5 +1,9 @@
 export const METHODS: Record<string, string[]> = {
   me: ["GET"],
+  onboarding: ["GET"],
+  invitations: ["POST"],
+  "invitation/preview": ["POST"],
+  "invitation/claim": ["POST"],
   dashboard: ["GET"],
   schedules: ["GET", "POST"],
   "leave-requests": ["GET", "POST"],
@@ -39,6 +43,7 @@ export function allowed(method: string, parts: string[]): boolean {
   const uuid =
     "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
   const patterns: [string, string][] = [
+    ["POST", `users/${uuid}/invitation(/cancel)?`],
     ["GET", `requisitions/${uuid}`],
     ["GET", `contracts/${uuid}`],
     ["PATCH", `(contracts|users|locations|equipment)/${uuid}`],
@@ -75,7 +80,7 @@ export function backendURL(value: string | undefined): URL | null {
       url.protocol !== "https:" &&
       !(
         url.protocol === "http:" &&
-        ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)
+        ["127.0.0.1", "localhost", "[::1]", "backend"].includes(url.hostname)
       )
     )
       return null;

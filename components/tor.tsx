@@ -3,6 +3,11 @@ import { useState } from "react";
 import { FileText, MapPin, Plus, Trash2 } from "lucide-react";
 import { useSession } from "./auth";
 import {
+  InviteUserForm,
+  RenewInvitationForm,
+  CancelInvitationForm,
+} from "./invitation";
+import {
   ActionForm,
   AddButton,
   Back,
@@ -16,6 +21,7 @@ import {
   Pager,
   Panel,
   Resource,
+  RoleBadge,
   SearchBox,
   Table,
   fdNumber,
@@ -235,6 +241,8 @@ type Area = {
   location_id: string;
   new_name: string;
   address: string;
+  latitude: string;
+  longitude: string;
   required_workers: string;
   items: {
     key: number;
@@ -263,6 +271,8 @@ function TORWizard({
       location_id: "",
       new_name: "",
       address: "",
+      latitude: "",
+      longitude: "",
       required_workers: "1",
       items: [{ key: 1, equipment_name: "", required_qty: "1", remark: "" }],
     },
@@ -378,7 +388,12 @@ function TORWizard({
                   ...(a.location_id && a.location_id !== "new"
                     ? { location_id: a.location_id }
                     : {
-                        new_location: { name: a.new_name, address: a.address },
+                        new_location: {
+                          name: a.new_name,
+                          address: a.address,
+                          latitude: Number(a.latitude),
+                          longitude: Number(a.longitude),
+                        },
                       }),
                   required_workers: Number(a.required_workers),
                   items: a.items.map((it) => ({
@@ -455,6 +470,39 @@ function TORWizard({
                         onChange={(e) => change(i, { address: e.target.value })}
                       />
                     </Field>
+                    <div className="form-grid">
+                      <Field label="ละติจูด (Latitude)">
+                        <input
+                          aria-label="ละติจูด (Latitude)"
+                          type="number"
+                          step="any"
+                          min="-90"
+                          max="90"
+                          required
+                          value={a.latitude}
+                          onChange={(e) =>
+                            change(i, { latitude: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field label="ลองจิจูด (Longitude)">
+                        <input
+                          aria-label="ลองจิจูด (Longitude)"
+                          type="number"
+                          step="any"
+                          min="-180"
+                          max="180"
+                          required
+                          value={a.longitude}
+                          onChange={(e) =>
+                            change(i, { longitude: e.target.value })
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <p className="muted">
+                      พิกัดนี้ใช้ตรวจระยะ GPS เมื่อพนักงานเช็กอิน
+                    </p>
                   </>
                 )}
                 <Field label="จำนวนคนงานขั้นต่ำ">
@@ -551,6 +599,8 @@ function TORWizard({
                     location_id: "",
                     new_name: "",
                     address: "",
+                    latitude: "",
+                    longitude: "",
                     required_workers: "1",
                     items: [
                       {
@@ -587,6 +637,9 @@ function TORWizard({
   );
 }
 export function Catalog() {
+  const [createInvitation, setCreateInvitation] = useState(false);
+  const [renewInvitation, setRenewInvitation] = useState<Row | null>(null);
+  const [cancelInvitation, setCancelInvitation] = useState<Row | null>(null);
   const { list, api } = useSession();
   const [tab, setTab] = useState("equipment");
   const [edit, setEdit] = useState<Row | null>(null);
@@ -599,6 +652,8 @@ export function Catalog() {
   const title =
     tab === "users" ? "บุคลากร" : tab === "locations" ? "สถานที่" : "อุปกรณ์";
   const r = edit || {};
+  const unbound =
+    r.invitation_pending === true || r.invitation_cancelled === true;
   const fields =
     tab === "equipment"
       ? [
@@ -642,31 +697,6 @@ export function Catalog() {
               label: "ค่าจ้างต่อวัน",
               value: str(r, "daily_wage") || "400.00",
             },
-            ...(!edit
-              ? [
-                  {
-                    name: "role",
-                    label: "บทบาท",
-                    options: [
-                      { value: "worker", label: "พนักงาน" },
-                      { value: "assistant", label: "ผู้ดูแลงาน" },
-                      { value: "supervisor", label: "ผู้ควบคุมงาน" },
-                    ],
-                  },
-                  {
-                    name: "line_id",
-                    label: "LINE subject ที่ตรวจสอบแล้ว",
-                    maxLength: 50,
-                  },
-                  {
-                    name: "phone_number",
-                    label: "โทรศัพท์",
-                    pattern: "[0-9]{10}",
-                  },
-                  { name: "bank_name", label: "ธนาคาร" },
-                  { name: "bank_account_no", label: "เลขบัญชี" },
-                ]
-              : []),
           ];
   return (
     <>
@@ -674,7 +704,13 @@ export function Catalog() {
         title="ข้อมูลหลัก"
         description="ตั้งค่าอุปกรณ์ พิกัดพื้นที่ และบัญชีผู้ใช้"
         action={
-          <AddButton onClick={() => setCreate(true)}>เพิ่ม{title}</AddButton>
+          tab === "users" ? (
+            <AddButton onClick={() => setCreateInvitation(true)}>
+              เพิ่มบุคลากร
+            </AddButton>
+          ) : (
+            <AddButton onClick={() => setCreate(true)}>เพิ่ม{title}</AddButton>
+          )
         }
       />
       <div className="tabs">
@@ -695,6 +731,26 @@ export function Catalog() {
           </button>
         ))}
       </div>
+      {createInvitation && (
+        <InviteUserForm
+          onClose={() => setCreateInvitation(false)}
+          onDone={resource.refresh}
+        />
+      )}
+      {cancelInvitation && (
+        <CancelInvitationForm
+          user={cancelInvitation}
+          onClose={() => setCancelInvitation(null)}
+          onDone={resource.refresh}
+        />
+      )}
+      {renewInvitation && (
+        <RenewInvitationForm
+          user={renewInvitation}
+          onClose={() => setRenewInvitation(null)}
+          onDone={resource.refresh}
+        />
+      )}
       <Panel>
         <Resource {...resource} retry={resource.refresh}>
           <Table
@@ -702,13 +758,68 @@ export function Catalog() {
             columns={
               tab === "users"
                 ? [
-                    { key: "first_name", label: "ชื่อ" },
-                    { key: "last_name", label: "นามสกุล" },
-                    { key: "role", label: "บทบาท" },
+                    {
+                      key: "first_name",
+                      label: "ชื่อ–นามสกุล",
+                      format: (r) =>
+                        [str(r, "first_name"), str(r, "last_name")]
+                          .filter(Boolean)
+                          .join(" ") || "—",
+                    },
+                    {
+                      key: "role",
+                      label: "บทบาท",
+                      format: (r) => <RoleBadge value={r.role} />,
+                    },
+                    {
+                      key: "daily_wage",
+                      label: "ค่าจ้างต่อวัน (บาท)",
+                      format: (r) =>
+                        r.daily_wage == null
+                          ? "—"
+                          : money(str(r, "daily_wage")),
+                    },
                     {
                       key: "is_active",
-                      label: "ใช้งาน",
-                      format: (r) => (r.is_active ? "ใช้งาน" : "ระงับ"),
+                      label: "สถานะบัญชี",
+                      format: (r) => (
+                        <span
+                          className={`badge ${r.invitation_cancelled ? "neutral" : r.invitation_pending ? "amber" : r.is_active ? "green" : "red"}`}
+                        >
+                          {r.invitation_cancelled
+                            ? "ยกเลิกลิงก์แล้ว"
+                            : r.invitation_pending
+                              ? "รอผูก LINE"
+                              : r.is_active
+                                ? "ใช้งาน"
+                                : "ระงับ"}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "invitation_pending",
+                      label: "เชื่อมบัญชี LINE",
+                      format: (r) =>
+                        r.invitation_pending || r.invitation_cancelled ? (
+                          <div className="invitation-actions">
+                            <button
+                              className="text-button"
+                              onClick={() => setRenewInvitation(r)}
+                            >
+                              ออกลิงก์เชิญใหม่
+                            </button>
+                            {r.invitation_pending === true && (
+                              <button
+                                className="text-button danger-text"
+                                onClick={() => setCancelInvitation(r)}
+                              >
+                                ยกเลิกลิงก์เชิญ
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          "เชื่อมแล้ว"
+                        ),
                     },
                   ]
                 : tab === "locations"
@@ -759,9 +870,9 @@ export function Catalog() {
                 data.longitude === "" ? null : fdNumber(fd, "longitude");
             }
             if (tab === "users") satang(String(data.daily_wage));
-            if (tab === "equipment" || (tab === "users" && edit))
+            if (tab === "equipment" || (tab === "users" && edit && !unbound))
               data.is_active = fdString(fd, "is_active") !== "false";
-            if (tab === "users" && edit && r.role === "worker")
+            if (tab === "users" && edit && r.role === "worker" && !unbound)
               data.is_available = fdString(fd, "is_available") === "true";
             return edit
               ? api.patch(
@@ -772,7 +883,20 @@ export function Catalog() {
           }}
         >
           <Inputs fields={fields} />
-          {(tab === "equipment" || (tab === "users" && edit)) && (
+          {tab === "users" && edit && r.invitation_cancelled === true && (
+            <p className="notice">
+              ลิงก์เชิญถูกยกเลิกแล้ว กรุณาออกลิงก์ใหม่ให้เจ้าของบัญชีเพื่อผูก
+              LINE
+            </p>
+          )}
+          {tab === "users" && edit && r.invitation_pending === true && (
+            <p className="notice">
+              สถานะบัญชี: รอผูก LINE —
+              บัญชีจะเปิดใช้งานอัตโนมัติเมื่อเจ้าของบัญชียืนยันลิงก์เชิญ
+              ไม่ใช่บัญชีที่ถูกระงับ
+            </p>
+          )}
+          {(tab === "equipment" || (tab === "users" && edit && !unbound)) && (
             <Inputs
               fields={[
                 {
@@ -787,7 +911,7 @@ export function Catalog() {
               ]}
             />
           )}
-          {tab === "users" && edit && r.role === "worker" && (
+          {tab === "users" && edit && r.role === "worker" && !unbound && (
             <Inputs
               fields={[
                 {

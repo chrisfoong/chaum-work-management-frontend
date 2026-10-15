@@ -206,9 +206,7 @@ export function Portal() {
         </header>
         <main className="main-content">
           {preview && (
-            <div className="preview-note">
-              หน้าตาตัวอย่างจาก Figma — ปุ่มบันทึกไม่เชื่อมฐานข้อมูล
-            </div>
+            <div className="preview-note">ตัวอย่างหน้าจอ — ไม่บันทึกข้อมูล</div>
           )}
           {content}
         </main>
@@ -237,12 +235,12 @@ export function Portal() {
   );
 }
 function Dashboard({ navigate }: { navigate: (s: Section) => void }) {
-  const { user, get, list } = useSession();
+  const { user, get } = useSession();
   const resource = useData(
-    async (signal) => ({
-      stats: object(await get("dashboard", signal)),
-      requests: await list("requisitions?limit=5", signal),
-    }),
+    async (signal) => {
+      const stats = object(await get("dashboard", signal));
+      return { stats, requests: rows(stats.pending_requisitions) };
+    },
     [user.role],
   );
   const stats = resource.data?.stats || {};
@@ -277,7 +275,7 @@ function Dashboard({ navigate }: { navigate: (s: Section) => void }) {
           <Stat
             label="บทบาทของคุณ"
             value={roleName(user.role)}
-            note="สิทธิ์ตรวจสอบจากฐานข้อมูล"
+            note="บทบาทสำหรับบัญชีของคุณ"
           />
         </div>
         <div className="dashboard-columns">

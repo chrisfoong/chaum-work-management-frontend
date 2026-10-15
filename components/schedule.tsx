@@ -24,6 +24,8 @@ import {
 } from "./ui";
 import { clock, dateThai, todayBangkok } from "@/lib/domain";
 import { object, rows, str, num, type Row } from "@/lib/types";
+import { leaveForSchedule, leaveStatusText } from "@/lib/leave";
+import { attendanceActions, checkoutTimeReached } from "@/lib/worker-actions";
 import { CheckIn, Checkout } from "./worker";
 export function DateFilters({
   start,
@@ -63,18 +65,36 @@ export function DateFilters({
 }
 export function Schedules({ worker = false }: { worker?: boolean }) {
   const { list } = useSession();
-  const [start, setStart] = useState(todayBangkok());
+  const [start, setStart] = useState(() =>
+    worker ? todayBangkok(new Date(Date.now() - 86400000)) : todayBangkok(),
+  );
   const [end, setEnd] = useState("");
   const [offset, setOffset] = useState(0);
   const [create, setCreate] = useState(false);
   const [selected, setSelected] = useState<Row | null>(null);
   const [action, setAction] = useState("");
   const resource = useData(
-    (signal) =>
-      list(
-        `schedules?limit=50&offset=${offset}&period_start=${start}${end ? `&period_end=${end}` : ""}`,
-        signal,
-      ),
+    async (signal) => {
+      const [schedules, leaves, attendance] = await Promise.all([
+        list(
+          `schedules?limit=50&offset=${offset}&period_start=${start}${end ? `&period_end=${end}` : ""}`,
+          signal,
+        ),
+        worker
+          ? list(
+              `leave-requests?limit=100&period_start=${start}${end ? `&period_end=${end}` : ""}`,
+              signal,
+            )
+          : Promise.resolve([]),
+        worker
+          ? list(
+              `attendance?limit=100&period_start=${start}${end ? `&period_end=${end}` : ""}`,
+              signal,
+            )
+          : Promise.resolve([]),
+      ]);
+      return { schedules, leaves, attendance };
+    },
     [offset, start, end],
   );
   const done = () => {
@@ -114,11 +134,15 @@ export function Schedules({ worker = false }: { worker?: boolean }) {
       <Resource {...resource} retry={resource.refresh}>
         {worker ? (
           <div className="schedule-cards">
-            {resource.data?.length ? (
-              resource.data.map((r) => (
+            {resource.data?.schedules.length ? (
+              resource.data.schedules.map((r) => (
                 <ScheduleCard
                   key={str(r, "schedule_id")}
                   row={r}
+                  attendance={resource.data?.attendance.find(
+                    (a) => a.schedule_id === r.schedule_id,
+                  )}
+                  leave={leaveForSchedule(r, resource.data?.leaves || [])}
                   onCheckIn={() => {
                     setSelected(r);
                     setAction("in");
@@ -136,7 +160,7 @@ export function Schedules({ worker = false }: { worker?: boolean }) {
         ) : (
           <Panel>
             <Table
-              data={resource.data || []}
+              data={resource.data?.schedules || []}
               columns={[
                 { key: "work_date", label: "วันที่", format: "date" },
                 { key: "location_name", label: "พื้นที่" },
@@ -164,7 +188,7 @@ export function Schedules({ worker = false }: { worker?: boolean }) {
         )}
         <Pager
           offset={offset}
-          count={resource.data?.length || 0}
+          count={resource.data?.schedules.length || 0}
           onChange={setOffset}
         />
       </Resource>
@@ -193,15 +217,26 @@ export function Schedules({ worker = false }: { worker?: boolean }) {
 }
 export function ScheduleCard({
   row,
+  leave,
+  attendance,
   onCheckIn,
   onCheckout,
 }: {
   row: Row;
+  leave?: Row;
+  attendance?: Row;
   onCheckIn?: () => void;
   onCheckout?: () => void;
 }) {
   const today = str(row, "work_date").slice(0, 10) === todayBangkok();
   const cancelled = row.shift_status === "cancelled";
+  const { checkedIn, checkedOut } = attendanceActions(attendance);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+  const timeReached = checkoutTimeReached(row, now);
   return (
     <section className="shift-card">
       <div className="shift-heading">
@@ -221,20 +256,47 @@ export function ScheduleCard({
         <span>8 ชั่วโมง</span>
       </div>
       <small>{str(row, "address")}</small>
-      {today && !cancelled && (
-        <div className="shift-actions">
-          <Button onClick={onCheckIn} disabled={!onCheckIn}>
-            เช็คอิน
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={onCheckout}
-            disabled={!onCheckout}
-          >
-            ส่งผลงาน / เช็คเอาท์
-          </Button>
-        </div>
+      {leave && (
+        <p className="notice" role="status">
+          <strong>{leaveStatusText(leave.status)}</strong>
+          <br />
+          {leave.is_advance_notice === true ? "ลาล่วงหน้า" : "ลาฉุกเฉิน"} ·{" "}
+          {dateThai(str(leave, "leave_date"))}
+        </p>
       )}
+      {checkedIn && (
+        <p className="notice" role="status">
+          เช็กอินแล้ว {clock(str(attendance, "check_in"))}
+          {checkedOut
+            ? ` · เช็กเอาท์แล้ว ${clock(str(attendance, "check_out"))}`
+            : " · กำลังปฏิบัติงาน"}
+        </p>
+      )}
+      {checkedIn && !checkedOut && !timeReached && (
+        <p className="muted">
+          เช็กเอาท์ได้หลังจบกะ {clock(str(row, "shift_end_at"))} ·{" "}
+          {dateThai(str(row, "shift_end_at"))}
+        </p>
+      )}
+      {(today || (checkedIn && !checkedOut)) &&
+        !cancelled &&
+        leave?.status !== "approved" && (
+          <div className="shift-actions">
+            <Button
+              onClick={onCheckIn}
+              disabled={checkedIn || checkedOut || !onCheckIn}
+            >
+              {checkedIn ? "เช็กอินแล้ว" : "เช็กอิน"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={onCheckout}
+              disabled={!checkedIn || checkedOut || !onCheckout || !timeReached}
+            >
+              {checkedOut ? "เช็กเอาท์แล้ว" : "ส่งผลงาน / เช็กเอาท์"}
+            </Button>
+          </div>
+        )}
     </section>
   );
 }
@@ -507,9 +569,7 @@ function LeaveReview({
         </p>
       </Resource>
       {row.status === "rejected" && (
-        <p className="notice">
-          ใบลานี้ถูกปฏิเสธแล้ว การบันทึกซ้ำจะถูก Backend ปฏิเสธ
-        </p>
+        <p className="notice">ใบลานี้ถูกปฏิเสธแล้ว จึงไม่สามารถพิจารณาซ้ำได้</p>
       )}
     </ActionForm>
   );
@@ -532,7 +592,7 @@ export function Attendance() {
     <>
       <Heading
         title="การเข้างาน"
-        description="สถานะจากเวลาบน Server และหลักฐาน GPS + QR"
+        description="ตรวจสอบเวลาเข้างานและสถานะของแต่ละกะ"
         action={
           <Button onClick={() => setProcess(true)}>ประมวลผลขาดงาน</Button>
         }
@@ -594,7 +654,7 @@ export function Attendance() {
         </div>
         <p className="muted">
           ประมวลผลขาดหลังสิ้นกะ +2 ชั่วโมง
-          การลาล่วงหน้าที่อนุมัติเท่านั้นได้รับยกเว้นตามกติกา Backend
+          ใบลาล่วงหน้าที่อนุมัติแล้วจะได้รับยกเว้นการหักเงินกรณีขาดงาน
         </p>
       </Panel>
       {process && (
@@ -647,9 +707,9 @@ export function Operations() {
   return (
     <>
       <Heading
-        eyebrow="OPERATIONAL REPORT · 9A"
+        eyebrow="OPERATIONAL REPORT"
         title="สรุปการดำเนินงาน"
-        description="ข้อมูลปัจจุบันตามรอบที่เลือก ไม่เก็บประวัติการส่งหรือการอ่าน"
+        description="สรุปการเข้างานและความพร้อมของอุปกรณ์ตามช่วงวันที่"
       />
       <div className="toolbar">
         <Field label="พื้นที่">
@@ -753,7 +813,7 @@ export function StaffQR() {
     <>
       <Heading
         title="QR เช็คอินพื้นที่"
-        description="QR ลงนามโดย Backend มีอายุ 60 วินาที พนักงานต้องผ่าน GPS ด้วย"
+        description="ให้พนักงานสแกน QR เพื่อเช็กอิน พร้อมเปิดตำแหน่งที่ตั้ง QR มีอายุ 60 วินาที"
       />
       <Panel>
         <Field label="พื้นที่">

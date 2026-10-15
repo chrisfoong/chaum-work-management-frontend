@@ -73,14 +73,14 @@ export class API {
   private async json(response: Response): Promise<unknown> {
     if (!response.headers.get("content-type")?.includes("application/json")) {
       throw new APIError(
-        "ปลายทางส่งหน้าเว็บแทนข้อมูล API กรุณาตรวจ tunnel และ Backend",
+        "เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ",
         502,
       );
     }
     try {
       return await response.json();
     } catch {
-      throw new APIError("ข้อมูลตอบกลับจาก API ไม่ถูกต้อง กรุณาลองใหม่", 502);
+      throw new APIError("ระบบตอบกลับไม่สมบูรณ์ กรุณาลองใหม่", 502);
     }
   }
   async get(path: string, signal?: AbortSignal): Promise<unknown> {
@@ -132,7 +132,7 @@ export class API {
     );
     const path = result.path || result.object_path;
     if (typeof path !== "string")
-      throw new APIError("ระบบไม่คืนเส้นทางไฟล์", 502);
+      throw new APIError("อัปโหลดไฟล์ไม่สำเร็จ กรุณาลองใหม่", 502);
     return path;
   }
   async download(path: string, name: string): Promise<void> {

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: process.env.FRONTEND_DEV_HOST
     ? [process.env.FRONTEND_DEV_HOST]
     : [],

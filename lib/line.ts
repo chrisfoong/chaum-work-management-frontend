@@ -13,7 +13,7 @@ export async function withDeadline<T>(
           () =>
             reject(
               new Error(
-                "เชื่อมต่อ LINE ใช้เวลานานเกินไป กรุณาตรวจอินเทอร์เน็ตและ LIFF Endpoint แล้วโหลดหน้าใหม่",
+                "เชื่อมต่อ LINE ใช้เวลานานเกินไป กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่",
               ),
             ),
           milliseconds,
@@ -33,7 +33,16 @@ export async function initializeLIFF(id: string) {
       if (initialization?.promise === promise) initialization = null;
     });
   }
-  await initialization.promise;
+  try {
+    await initialization.promise;
+  } catch (error) {
+    if (error instanceof TypeError && /fetch|network/i.test(error.message)) {
+      throw new Error(
+        "เชื่อมต่อ LINE ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วเข้าสู่ระบบใหม่",
+      );
+    }
+    throw error;
+  }
   return liff;
 }
 

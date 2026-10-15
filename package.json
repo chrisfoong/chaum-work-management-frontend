@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0 --port 5500",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "format:check": "prettier --check app components lib tests docs README.md AGENTS.md"
+    "format:check": "prettier --check app components lib tests docs README.md AGENTS.md",
+    "docker:ps": "docker compose --env-file .env.local ps",
+    "docker:up": "docker compose --env-file .env.local up --build -d",
+    "docker:logs": "docker compose --env-file .env.local logs -f",
+    "docker:down": "docker compose --env-file .env.local down",
+    "docker:build": "docker compose --env-file .env.local build"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

@@ -162,6 +162,9 @@ export function previewGet(path: string): unknown {
       open_requisitions: 2,
       upcoming_schedules: 1,
       contracts: previewData.contracts,
+      pending_requisitions: previewData.requisitions
+        .filter((r) => !["completed", "rejected"].includes(String(r.status)))
+        .slice(0, 5),
     };
   if (path.startsWith("reports/profit"))
     return {

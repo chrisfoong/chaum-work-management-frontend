@@ -60,6 +60,19 @@ export function Badge({ value }: { value: unknown }) {
     </span>
   );
 }
+export function RoleBadge({ value }: { value: unknown }) {
+  const roles: Record<string, { label: string; tone: string }> = {
+    supervisor: { label: "ผู้ควบคุมงาน", tone: "supervisor" },
+    assistant: { label: "ผู้ดูแลงาน", tone: "assistant" },
+    worker: { label: "พนักงาน", tone: "worker" },
+  };
+  const role = roles[String(value ?? "")];
+  return (
+    <span className={`badge role-badge role-${role?.tone ?? "unknown"}`}>
+      {role?.label ?? "ไม่ระบุบทบาท"}
+    </span>
+  );
+}
 export function Button({
   children,
   onClick,
@@ -387,6 +400,7 @@ export function ActionForm({
   onDone,
   onClose,
   submitLabel = "ยืนยันบันทึก",
+  submitDisabled = false,
 }: {
   title: string;
   children: ReactNode;
@@ -394,6 +408,7 @@ export function ActionForm({
   onDone: () => void;
   onClose: () => void;
   submitLabel?: string;
+  submitDisabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -410,15 +425,25 @@ export function ActionForm({
     >
       {done ? (
         <div className="success">
-          <Check size={40} />
-          <h3>ดำเนินรายการเสร็จแล้ว</h3>
+          {notification?.warning ? (
+            <CircleAlert size={40} />
+          ) : (
+            <Check size={40} />
+          )}
+          <h3>
+            {notification?.warning
+              ? result.business_saved === true
+                ? "บันทึกข้อมูลแล้ว"
+                : "ตรวจสอบการแจ้งเตือน"
+              : "ดำเนินรายการเสร็จแล้ว"}
+          </h3>
           {notification && (
             <p role={notification.warning ? "alert" : undefined}>
               {notification.message}
             </p>
           )}
           {result.persisted === false && !notification && (
-            <p>คำนวณจากข้อมูลปัจจุบัน ไม่ได้เก็บผลสรุปถาวร</p>
+            <p>ผลสรุปอัปเดตตามข้อมูลล่าสุด</p>
           )}
           <Button
             onClick={() => {
@@ -433,6 +458,7 @@ export function ActionForm({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
+            if (submitDisabled || busy) return;
             setError("");
             setBusy(true);
             try {
@@ -456,7 +482,7 @@ export function ActionForm({
             <Button variant="secondary" onClick={onClose} disabled={busy}>
               ยกเลิก
             </Button>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || submitDisabled}>
               {busy ? (
                 <LoaderCircle size={18} className="spin" />
               ) : (

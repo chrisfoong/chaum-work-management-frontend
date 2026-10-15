@@ -37,7 +37,7 @@ test("failed or disabled notification remains visible after business is saved", 
   assert.match(
     notificationInfo({ status: "disabled", delivery_verified: false })
       ?.message || "",
-    /ไม่มีข้อความถูกส่ง/,
+    /บริการแจ้งเตือนยังไม่พร้อมใช้งาน/,
   );
 });
 test("money keeps cents exact and supports negative report display", () => {
@@ -140,17 +140,19 @@ test("proxy route allowlist rejects arbitrary URLs traversal and unsupported wri
     assert.equal(allowed("GET", path), false);
   assert.equal(allowed("DELETE", ["web", "users", id]), false);
 });
-test("proxy origin policy allows fixed HTTPS or loopback only", () => {
+test("proxy origin policy allows HTTPS, loopback and the exact Docker backend host", () => {
   for (const value of [
     "https://api.example.com",
     "http://127.0.0.1:8080",
     "http://localhost:8080",
+    "http://backend:8080",
   ])
     assert.ok(backendURL(value));
   for (const value of [
     undefined,
     "http://example.com",
     "https://user:password@example.com",
+    "http://backend.example.com:8080",
     "https://api.example.com/api",
     "https://api.example.com?target=x",
     "file:///test",

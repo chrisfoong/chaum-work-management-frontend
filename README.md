@@ -10,7 +10,7 @@ npm ci
 npm run dev
 ```
 
-เปิด `http://localhost:3000` เพื่อ Login หรือ `/preview` เพื่อดูหน้าตาทั้งสามบทบาทด้วยข้อมูลสมมติ ปุ่มบันทึกใน Preview ถูกปฏิเสธก่อนเรียกเครือข่าย ไม่ใช่ login mock ของระบบจริง
+เปิด `http://localhost:5500` เพื่อ Login หรือ `/preview` เพื่อดูหน้าตาทั้งสามบทบาทด้วยข้อมูลสมมติ ปุ่มบันทึกใน Preview ถูกปฏิเสธก่อนเรียกเครือข่าย ไม่ใช่ login mock ของระบบจริง
 
 ตั้งค่าเองโดยอิง `.env.example`: `BACKEND_URL` เป็น origin ของ Go API, public LIFF ID ของ Web และ Worker เป็นคนละค่า LIFF ID ไม่ใช่ Channel ID ไม่ต้องใส่ Supabase URL/key, database password หรือ LINE channel secret ใน Frontend
 
@@ -50,3 +50,7 @@ Unit/API/proxy tests ใช้ข้อมูลทดสอบในหน่�
 `app/` routes และ server proxy, `components/` แยกกลุ่มงาน, `lib/` API/session/เงิน/วันและ preview, `tests/` unit/proxy tests, `docs/` requirement และตรวจรับ ใช้ฟอนต์ Noto Sans Thai/Inter แบบ bundled ไม่โหลด Google Fonts ตอน build
 
 Feature branches เป็นชุดต่อกันจาก `feature/frontend-foundation` ไปจน `feature/frontend-verification` ให้ตรวจ diff ต่อ parent ของแต่ละชุด การ merge ควรทำตามลำดับ ไม่มีการ deploy อัตโนมัติ
+
+## Dev และ Docker Compose
+
+ดู [DEV_DOCKER.md](DEV_DOCKER.md) สำหรับการตั้ง config, เปิดสอง repo พร้อมกัน, build image และคำสั่งหยุดระบบ

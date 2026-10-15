@@ -11,7 +11,8 @@ async function handle(
       { error: { message } },
       { status, headers: { "Cache-Control": "no-store" } },
     );
-  if (!allowed(request.method, path)) return error(404, "ไม่พบ API นี้");
+  if (!allowed(request.method, path))
+    return error(404, "ไม่พบรายการที่ต้องการ");
   const authorization = request.headers.get("authorization");
   if (
     !authorization ||
@@ -20,7 +21,7 @@ async function handle(
   )
     return error(401, "กรุณาเข้าสู่ระบบ LINE");
   const base = backendURL(process.env.BACKEND_URL);
-  if (!base) return error(503, "ยังไม่ได้ตั้งค่าการเชื่อมต่อ Backend");
+  if (!base) return error(503, "ระบบยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
   const target = new URL(`/api/${path.join("/")}`, base);
   target.search = new URL(request.url).search;
   const headers = new Headers({ Authorization: authorization });
@@ -72,7 +73,7 @@ async function handle(
       headers: responseHeaders,
     });
   } catch {
-    return error(502, "เชื่อมต่อ Backend ไม่สำเร็จ กรุณาลองใหม่");
+    return error(502, "เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่");
   }
 }
 export const GET = handle;
