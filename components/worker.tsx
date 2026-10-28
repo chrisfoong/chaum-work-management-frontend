@@ -35,7 +35,8 @@ import {
   fileFrom,
   useData,
 } from "./ui";
-import { ScheduleCard } from "./schedule";
+import { ScheduleCard } from "./schedule-card";
+import { useCurrentTime } from "@/lib/use-current-time";
 import {
   clock,
   dateThai,
@@ -435,11 +436,7 @@ export function Checkout({
   onDone: () => void;
 }) {
   const { api } = useSession();
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
+  const now = useCurrentTime();
   const timeReached = checkoutTimeReached(row, now);
   return (
     <ActionForm

@@ -156,3 +156,9 @@ Retry popup now displays current request status and next actor/action, limits no
 ## Scheduled-end checkout guard — 2026-10-14
 
 Worker card and checkout form now require scheduled shift_end_at before enabling submission, show the exact eligible date/time, and update clock every 15 seconds. Worker schedule default includes yesterday for overnight attendance; unclosed cards retain checkout actions after midnight. Server is authoritative. 44 tests, typecheck, lint/format and production build passed. Mobile Preview with controlled 15:00 clock verified disabled checkout before 16:00 end and displayed availability; no live write. Docker both healthy. User reports TOR equipment, real GPS/QR and shortage request exercised; DB read verified check-in and one additional request pending_procurement. Early 20:39 checkout on 18:00-02:00 shift preserved as defect evidence, not silently corrected. New real-device checkout policy remains pending.
+
+## Workflow module refactor — 2026-10-28
+
+Extracted the shared shift card into `components/schedule-card.tsx`, removing the circular dependency between Worker and Schedule modules. Both the card and checkout form use `lib/use-current-time.ts` for the existing 15-second clock lifecycle, including interval cleanup. API calls, UI markup, attendance/leave rules, and checkout timing remain unchanged.
+
+Verification: 44 tests, full lint, typecheck, formatting and native production build passed. Browser smoke on a separate production preview port verified Worker Home/Schedule, saved check-in and early-checkout guards, duplicate equipment exclusion, mobile/desktop fit and zero page errors. Preview used a controlled client clock and no live business writes. Screenshots and comparison artifacts are in the workspace `refactor-workflow-proof` directory. The temporary preview server was stopped after verification.
