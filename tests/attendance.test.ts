@@ -14,9 +14,9 @@ test("GPS requires TOR coordinates, finite position, accuracy <=50m and radius <
 test("QR countdown uses issuer expiry instead of resetting at scan time", () => {
   const token =
     Buffer.from(
-      JSON.stringify({ assignment_id: "area", iat: 100, exp: 160 }),
+      JSON.stringify({ assignment_id: "area", iat: 100, exp: 400 }),
     ).toString("base64url") + ".signature";
-  assert.equal(qrExpiry(token), 160000);
+  assert.equal(qrExpiry(token), 400000);
   assert.equal(qrExpiry("bad"), null);
   const wrong =
     Buffer.from(

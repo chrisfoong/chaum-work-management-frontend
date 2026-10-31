@@ -15,7 +15,7 @@ export function qrExpiry(token: string): number | null {
     if (
       !Number.isSafeInteger(claims.exp) ||
       !Number.isSafeInteger(claims.iat) ||
-      claims.exp - claims.iat !== 60 ||
+      claims.exp - claims.iat !== 300 ||
       typeof claims.assignment_id !== "string"
     )
       return null;

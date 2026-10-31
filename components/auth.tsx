@@ -9,7 +9,12 @@ import {
 } from "react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { initializeLIFF, startLINELogin } from "@/lib/line";
+import {
+  initializeLIFF,
+  startLINELogin,
+  isLocalLINEEntry,
+  lineEntryURL,
+} from "@/lib/line";
 import { verifiedUser } from "@/lib/session";
 import { API } from "@/lib/api";
 import { object, roleName, type Role, type User } from "@/lib/types";
@@ -70,6 +75,7 @@ export function AuthProvider({
     if (previewRole) return;
     let alive = true;
     (async () => {
+      if (isLocalLINEEntry(window.location.href)) return;
       const platform =
         entryPlatform || sessionStorage.getItem("chaum-platform");
       if (platform !== "web" && platform !== "worker") {
@@ -203,6 +209,7 @@ export function Login({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial);
   useEffect(() => {
+    if (isLocalLINEEntry(window.location.href)) return;
     const params = new URLSearchParams(window.location.search);
     if (!params.has("liff.state") && !params.has("liffClientId")) return;
     let alive = true;
@@ -253,6 +260,10 @@ export function Login({
           "ช่องทางเข้าสู่ระบบนี้ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ",
         );
       sessionStorage.setItem("chaum-platform", platform);
+      if (isLocalLINEEntry(window.location.href)) {
+        window.location.assign(lineEntryURL(id, platform, captureInvitation()));
+        return;
+      }
       const liff = await initializeLIFF(id);
       startLINELogin(
         liff,

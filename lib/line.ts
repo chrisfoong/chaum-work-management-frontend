@@ -58,3 +58,37 @@ export function startLINELogin(
   if (liff.isLoggedIn()) liff.logout();
   liff.login({ redirectUri });
 }
+
+// Loopback pages may show Login/Preview, but LINE authentication starts at its registered endpoint.
+export function isLocalLINEEntry(href: string): boolean {
+  try {
+    const host = new URL(href).hostname;
+    return (
+      host === "localhost" ||
+      host.endsWith(".localhost") ||
+      host === "127.0.0.1" ||
+      host === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function lineEntryURL(
+  id: string,
+  platform: "web" | "worker",
+  invitation: string | null,
+): string {
+  const liffID = id.trim();
+  if (!/^\d+-[A-Za-z0-9_-]+$/.test(liffID))
+    throw new Error("LIFF ID ไม่ถูกต้อง กรุณาตรวจการตั้งค่าช่องทางเข้าสู่ระบบ");
+  const url = new URL(
+    liffID,
+    platform === "worker"
+      ? "https://miniapp.line.me/"
+      : "https://liff.line.me/",
+  );
+  if (invitation)
+    url.hash = new URLSearchParams({ invite: invitation, platform }).toString();
+  return url.href;
+}
