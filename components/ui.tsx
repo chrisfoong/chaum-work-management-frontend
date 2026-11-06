@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import {
   ArrowLeft,
   Check,
@@ -9,7 +10,6 @@ import {
   LoaderCircle,
   Plus,
   Search,
-  TreePine,
   X,
 } from "lucide-react";
 import type { API } from "@/lib/api";
@@ -20,13 +20,14 @@ import { num, str, type Row } from "@/lib/types";
 export function Brand({ small = false }: { small?: boolean }) {
   return (
     <div className={`brand ${small ? "small" : ""}`}>
-      <span className="brand-icon">
-        <TreePine size={small ? 22 : 27} />
-      </span>
-      <div>
-        <strong>ชะอุ่ม</strong>
-        {!small && <small>CHAUM WORK MANAGEMENT</small>}
-      </div>
+      <Image
+        className="brand-logo"
+        src="/brand/chaum-logo.png"
+        alt="ชะอุ่ม · CHAUM"
+        width={1774}
+        height={887}
+        priority
+      />
     </div>
   );
 }
@@ -254,10 +255,14 @@ export function Field({
   label,
   children,
   hint,
+  error,
+  errorId,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
+  error?: string;
+  errorId?: string;
 }) {
   const id = useId();
   return (
@@ -265,6 +270,11 @@ export function Field({
       <label id={id}>{label}</label>
       <div aria-labelledby={id}>{children}</div>
       {hint && <small>{hint}</small>}
+      {error && (
+        <small id={errorId} className="field-error" role="alert">
+          {error}
+        </small>
+      )}
     </div>
   );
 }
@@ -282,14 +292,31 @@ export type FieldSpec = {
   hint?: string;
   multiple?: boolean;
 };
-export function Inputs({ fields }: { fields: FieldSpec[] }) {
+export function Inputs({
+  fields,
+  errors = {},
+}: {
+  fields: FieldSpec[];
+  errors?: Record<string, string>;
+}) {
+  const id = useId();
   return (
     <div className="form-grid">
       {fields.map((f) => (
-        <Field key={f.name} label={f.label} hint={f.hint}>
+        <Field
+          key={f.name}
+          label={f.label}
+          hint={f.hint}
+          error={errors[f.name]}
+          errorId={`${id}-${f.name}-error`}
+        >
           {f.options ? (
             <select
               aria-label={f.label}
+              aria-invalid={Boolean(errors[f.name])}
+              aria-describedby={
+                errors[f.name] ? `${id}-${f.name}-error` : undefined
+              }
               name={f.name}
               required={f.required !== false}
               defaultValue={f.value || ""}
@@ -305,6 +332,10 @@ export function Inputs({ fields }: { fields: FieldSpec[] }) {
           ) : f.type === "textarea" ? (
             <textarea
               aria-label={f.label}
+              aria-invalid={Boolean(errors[f.name])}
+              aria-describedby={
+                errors[f.name] ? `${id}-${f.name}-error` : undefined
+              }
               name={f.name}
               required={f.required !== false}
               maxLength={f.maxLength || 1000}
@@ -313,6 +344,10 @@ export function Inputs({ fields }: { fields: FieldSpec[] }) {
           ) : (
             <input
               aria-label={f.label}
+              aria-invalid={Boolean(errors[f.name])}
+              aria-describedby={
+                errors[f.name] ? `${id}-${f.name}-error` : undefined
+              }
               name={f.name}
               type={f.type || "text"}
               required={f.required !== false}

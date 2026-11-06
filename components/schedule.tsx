@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { QrCode, RefreshCw } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import { useSession } from "./auth";
 import {
   ActionForm,
@@ -716,7 +716,7 @@ export function StaffQR() {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const output = useRef<HTMLDivElement>(null);
+  const qrCanvas = useRef<HTMLCanvasElement>(null);
   const area = areas.data?.find((r) => str(r, "assignment_id") === id);
   return (
     <>
@@ -771,8 +771,17 @@ export function StaffQR() {
         {areas.error && <ErrorBox error={areas.error} retry={areas.refresh} />}
         {error && <ErrorBox error={error} />}
         {token && (
-          <div className="qr-output" ref={output}>
-            <QRCodeSVG value={token} size={260} level="M" marginSize={4} />
+          <div className="qr-output">
+            <QRCodeCanvas
+              ref={qrCanvas}
+              value={token}
+              size={1024}
+              style={{ width: 260, maxWidth: "100%", height: "auto" }}
+              level="M"
+              marginSize={4}
+              bgColor="#ffffff"
+              fgColor="#000000"
+            />
             <strong>
               {str(area || {}, "project_name")} ·{" "}
               {str(area || {}, "location_name")}
@@ -784,23 +793,27 @@ export function StaffQR() {
             <Button
               variant="secondary"
               onClick={() => {
-                const svg = output.current?.querySelector("svg");
-                if (!svg) return;
-                const clone = svg.cloneNode(true) as SVGSVGElement;
-                clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-                const url = URL.createObjectURL(
-                  new Blob([new XMLSerializer().serializeToString(clone)], {
-                    type: "image/svg+xml",
-                  }),
-                );
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `chaum-area-${id}.svg`;
-                link.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                try {
+                  const canvas = qrCanvas.current;
+                  if (!canvas) throw new Error("กรุณาสร้าง QR ก่อนดาวน์โหลด");
+                  const name = str(area || {}, "location_name")
+                    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
+                    .trim();
+                  const link = document.createElement("a");
+                  link.href = canvas.toDataURL("image/png");
+                  link.download = `พื้นที่ดูแล(${name || "ไม่ระบุชื่อ"}).png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  setError("");
+                } catch (e) {
+                  setError(
+                    e instanceof Error ? e.message : "ดาวน์โหลด PNG ไม่สำเร็จ",
+                  );
+                }
               }}
             >
-              ดาวน์โหลด QR สำหรับพิมพ์
+              ดาวน์โหลด QR เป็น PNG
             </Button>
           </div>
         )}

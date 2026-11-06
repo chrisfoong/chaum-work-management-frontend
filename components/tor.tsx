@@ -1,5 +1,11 @@
 "use client";
 import { useState } from "react";
+import { ContractEvidence } from "./contract-evidence";
+import {
+  contractInfoErrors,
+  prepareContractEvidence,
+  type ContractInfo,
+} from "@/lib/contract-evidence";
 import { FileText, MapPin, Plus, Trash2 } from "lucide-react";
 import { useSession } from "./auth";
 import { ContractDetailsEditor, AssignmentEditor } from "./editing";
@@ -27,7 +33,6 @@ import {
   Table,
   fdNumber,
   fdString,
-  fileFrom,
   useData,
 } from "./ui";
 import { dateThai, money, satang, todayBangkok } from "@/lib/domain";
@@ -184,7 +189,10 @@ function ContractDetail({ row, onBack }: { row: Row; onBack: () => void }) {
       {detailsEdit && (
         <ContractDetailsEditor
           row={r}
-          onClose={() => setDetailsEdit(false)}
+          onClose={() => {
+            setDetailsEdit(false);
+            resource.refresh();
+          }}
           onDone={() => {
             setDetailsEdit(false);
             resource.refresh();
@@ -310,17 +318,41 @@ function TORWizard({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const { list, api } = useSession();
-  const locations = useData(
-    (signal) => list("locations?limit=100", signal),
-    [],
-  );
+  const { api } = useSession();
   const [step, setStep] = useState(1);
   const [info, setInfo] = useState<Row>({});
+  const [draft, setDraft] = useState<ContractInfo>({
+    start_date: todayBangkok(),
+  });
+  const [files, setFiles] = useState<File[]>([]);
+  const [prepared, setPrepared] = useState<File | null>(null);
+  const [uploaded, setUploaded] = useState<{ file: File; path: string } | null>(
+    null,
+  );
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const readDraft = (form: HTMLFormElement): ContractInfo => {
+    const fd = new FormData(form);
+    return Object.fromEntries(
+      [
+        "contract_no",
+        "project_name",
+        "partner_agency",
+        "start_date",
+        "end_date",
+        "contract_value",
+      ].map((key) => [key, fdString(fd, key)]),
+    );
+  };
+  async function prepareEvidence() {
+    if (prepared) return prepared;
+    const file = await prepareContractEvidence(files);
+    setPrepared(file);
+    return file;
+  }
   const [areas, setAreas] = useState<Area[]>([
     {
       key: 1,
-      location_id: "",
+      location_id: "new",
       new_name: "",
       address: "",
       latitude: "",
@@ -336,10 +368,14 @@ function TORWizard({
     setAreas((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
   return (
     <Modal title="สร้างสัญญา TOR" onClose={onClose} busy={busy}>
-      <div className="wizard-steps">
-        <span className={step === 1 ? "active" : ""}>1 ข้อมูลสัญญา</span>
-        <span className={step === 2 ? "active" : ""}>2 พื้นที่และอุปกรณ์</span>
-      </div>
+      {!done && (
+        <div className="wizard-steps">
+          <span className={step === 1 ? "active" : ""}>1 ข้อมูลสัญญา</span>
+          <span className={step === 2 ? "active" : ""}>
+            2 พื้นที่และอุปกรณ์
+          </span>
+        </div>
+      )}
       {done ? (
         <div className="success">
           <h3>สร้างสัญญาเรียบร้อยแล้ว</h3>
@@ -354,29 +390,67 @@ function TORWizard({
         </div>
       ) : step === 1 ? (
         <form
+          noValidate
+          onInput={(e) => {
+            const next = readDraft(e.currentTarget);
+            setDraft(next);
+            if (Object.values(fieldErrors).some(Boolean))
+              setFieldErrors((previous) => ({
+                ...contractInfoErrors(next),
+                ...(previous.file ? { file: previous.file } : {}),
+              }));
+          }}
           onSubmit={async (e) => {
             e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            setBusy(true);
+            const form = e.currentTarget;
+            const data = readDraft(form);
+            setDraft(data);
+            const problems = contractInfoErrors(data);
+            if (!files.length)
+              problems.file = "กรุณาแนบภาพหลักฐานสัญญา PNG อย่างน้อย 1 ภาพ";
+            setFieldErrors(problems);
             setError("");
+            if (Object.keys(problems).length) {
+              form
+                .querySelector<HTMLElement>(
+                  `[name="${Object.keys(problems)[0]}"]`,
+                )
+                ?.focus();
+              return;
+            }
+            setBusy(true);
             try {
-              const data = {
-                contract_no: fdString(fd, "contract_no"),
-                project_name: fdString(fd, "project_name"),
-                partner_agency: fdString(fd, "partner_agency"),
-                start_date: fdString(fd, "start_date"),
-                end_date: fdString(fd, "end_date"),
-                contract_value: fdString(fd, "contract_value"),
-              };
-              satang(data.contract_value);
-              if (data.end_date < data.start_date)
-                throw new Error("วันสิ้นสุดต้องไม่ก่อนวันเริ่ม");
-              const path = await fileFrom(fd, "file", api, ["image/png"]);
               await api.post("contracts/info", data);
+              let file: File;
+              try {
+                file = await prepareEvidence();
+              } catch (e) {
+                setFieldErrors((previous) => ({
+                  ...previous,
+                  file:
+                    e instanceof Error ? e.message : "ตรวจไฟล์หลักฐานไม่สำเร็จ",
+                }));
+                return;
+              }
+              const path =
+                uploaded?.file === file
+                  ? uploaded.path
+                  : await api.upload(file, ["image/png"]);
+              setUploaded({ file, path });
               setInfo({ ...data, contract_file_path: path });
               setStep(2);
             } catch (e) {
-              setError(e instanceof Error ? e.message : "ตรวจข้อมูลไม่สำเร็จ");
+              const message =
+                e instanceof Error
+                  ? e.message
+                  : "ตรวจข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง";
+              if (/duplicate|contract.*exist|เลข.*สัญญา.*ซ้ำ/i.test(message))
+                setFieldErrors((previous) => ({
+                  ...previous,
+                  contract_no:
+                    "เลขที่สัญญานี้มีอยู่แล้ว กรุณาตรวจสอบหรือใช้เลขสัญญาอื่น",
+                }));
+              else setError(message);
             } finally {
               setBusy(false);
             }
@@ -384,6 +458,7 @@ function TORWizard({
         >
           <fieldset disabled={busy}>
             <Inputs
+              errors={fieldErrors}
               fields={[
                 {
                   name: "contract_no",
@@ -406,17 +481,22 @@ function TORWizard({
                   label: "มูลค่าสัญญา (บาท)",
                   pattern: "[0-9]+(\\.[0-9]{1,2})?",
                 },
-              ]}
+              ].map((field) => ({ ...field, value: draft[field.name] || "" }))}
             />
-            <Field label="หลักฐานสัญญา PNG ไม่เกิน 5 MB">
-              <input
-                type="file"
-                aria-label="หลักฐานสัญญา"
-                name="file"
-                accept="image/png"
-                required
-              />
-            </Field>
+            <ContractEvidence
+              files={files}
+              onChange={(next) => {
+                setFiles(next);
+                setPrepared(null);
+                setUploaded(null);
+              }}
+              error={fieldErrors.file}
+              onError={(message) =>
+                setFieldErrors((previous) => ({ ...previous, file: message }))
+              }
+              prepared={prepared}
+              onPrepare={prepareEvidence}
+            />
           </fieldset>
           {error && <ErrorBox error={error} />}
           <div className="modal-footer">
@@ -484,79 +564,56 @@ function TORWizard({
                     </button>
                   )}
                 </div>
-                <Field label="สถานที่">
-                  <select
-                    aria-label={`สถานที่ ${i + 1}`}
-                    required
-                    value={a.location_id}
-                    onChange={(e) => change(i, { location_id: e.target.value })}
-                  >
-                    <option value="">เลือกพื้นที่</option>
-                    {(locations.data || []).map((l) => (
-                      <option
-                        key={str(l, "location_id")}
-                        value={str(l, "location_id")}
-                      >
-                        {str(l, "location_name") || str(l, "name")}
-                      </option>
-                    ))}
-                    <option value="new">+ เพิ่มสถานที่ใหม่</option>
-                  </select>
-                </Field>
-                {a.location_id === "new" && (
-                  <>
-                    <Field label="ชื่อสถานที่ใหม่">
+                <>
+                  <Field label="ชื่อพื้นที่">
+                    <input
+                      required
+                      aria-label="ชื่อพื้นที่"
+                      value={a.new_name}
+                      onChange={(e) => change(i, { new_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="ที่อยู่">
+                    <input
+                      aria-label="ที่อยู่"
+                      value={a.address}
+                      onChange={(e) => change(i, { address: e.target.value })}
+                    />
+                  </Field>
+                  <div className="form-grid">
+                    <Field label="ละติจูด (Latitude)">
                       <input
+                        aria-label="ละติจูด (Latitude)"
+                        type="number"
+                        step="any"
+                        min="-90"
+                        max="90"
                         required
-                        aria-label="ชื่อสถานที่ใหม่"
-                        value={a.new_name}
+                        value={a.latitude}
                         onChange={(e) =>
-                          change(i, { new_name: e.target.value })
+                          change(i, { latitude: e.target.value })
                         }
                       />
                     </Field>
-                    <Field label="ที่อยู่">
+                    <Field label="ลองจิจูด (Longitude)">
                       <input
-                        aria-label="ที่อยู่"
-                        value={a.address}
-                        onChange={(e) => change(i, { address: e.target.value })}
+                        aria-label="ลองจิจูด (Longitude)"
+                        type="number"
+                        step="any"
+                        min="-180"
+                        max="180"
+                        required
+                        value={a.longitude}
+                        onChange={(e) =>
+                          change(i, { longitude: e.target.value })
+                        }
                       />
                     </Field>
-                    <div className="form-grid">
-                      <Field label="ละติจูด (Latitude)">
-                        <input
-                          aria-label="ละติจูด (Latitude)"
-                          type="number"
-                          step="any"
-                          min="-90"
-                          max="90"
-                          required
-                          value={a.latitude}
-                          onChange={(e) =>
-                            change(i, { latitude: e.target.value })
-                          }
-                        />
-                      </Field>
-                      <Field label="ลองจิจูด (Longitude)">
-                        <input
-                          aria-label="ลองจิจูด (Longitude)"
-                          type="number"
-                          step="any"
-                          min="-180"
-                          max="180"
-                          required
-                          value={a.longitude}
-                          onChange={(e) =>
-                            change(i, { longitude: e.target.value })
-                          }
-                        />
-                      </Field>
-                    </div>
-                    <p className="muted">
-                      พิกัดนี้ใช้ตรวจระยะ GPS เมื่อพนักงานเช็กอิน
-                    </p>
-                  </>
-                )}
+                  </div>
+                  <p className="muted">
+                    พิกัดนี้ใช้ตรวจระยะ GPS เมื่อพนักงานเช็กอิน
+                  </p>
+                </>
                 <Field label="จำนวนคนงานขั้นต่ำ">
                   <input
                     aria-label="จำนวนคนงานขั้นต่ำ"
@@ -648,7 +705,7 @@ function TORWizard({
                   ...v,
                   {
                     key: Date.now(),
-                    location_id: "",
+                    location_id: "new",
                     new_name: "",
                     address: "",
                     latitude: "",

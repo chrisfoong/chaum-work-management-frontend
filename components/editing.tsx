@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useSession } from "./auth";
 import {
   ActionForm,
   Button,
   Field,
   Inputs,
+  Modal,
   Resource,
   fdString,
   fdNumber,
@@ -22,6 +23,204 @@ export function ContractDetailsEditor({
   row: Row;
   onClose: () => void;
   onDone: () => void;
+}) {
+  const { list } = useSession();
+  const [section, setSection] = useState("contract");
+  const [selected, setSelected] = useState<Row | "new" | null>(null);
+  const [location, setLocation] = useState<Row | null>(null);
+  const id = str(row, "tor_id");
+  const resource = useData(
+    (signal) => list(`assignments?tor_id=${id}&limit=100`, signal),
+    [id],
+  );
+  const navigation = (
+    <div className="tabs" aria-label="ส่วนที่แก้ไข">
+      <button
+        type="button"
+        className={section === "contract" ? "active" : ""}
+        onClick={() => {
+          setSection("contract");
+          setSelected(null);
+        }}
+      >
+        ข้อมูลสัญญา
+      </button>
+      <button
+        type="button"
+        className={section === "areas" ? "active" : ""}
+        onClick={() => {
+          setSection("areas");
+          setSelected(null);
+        }}
+      >
+        พื้นที่และอุปกรณ์
+      </button>
+    </div>
+  );
+  if (section === "contract")
+    return (
+      <ContractInfoEditor
+        row={row}
+        onClose={onClose}
+        onDone={onDone}
+        navigation={navigation}
+      />
+    );
+  if (location)
+    return (
+      <ContractLocationEditor
+        area={location}
+        onClose={() => setLocation(null)}
+        onDone={() => {
+          setLocation(null);
+          resource.refresh();
+        }}
+      />
+    );
+  if (selected)
+    return (
+      <AssignmentEditor
+        torID={id}
+        area={selected === "new" ? undefined : selected}
+        onClose={() => setSelected(null)}
+        onDone={() => {
+          setSelected(null);
+          resource.refresh();
+        }}
+        navigation={navigation}
+      />
+    );
+  return (
+    <Modal title="แก้ไขรายละเอียดสัญญา" onClose={onClose}>
+      {navigation}
+      <Resource {...resource} retry={resource.refresh}>
+        <div className="toolbar">
+          <Button variant="secondary" onClick={() => setSelected("new")}>
+            เพิ่มพื้นที่ใน TOR
+          </Button>
+        </div>
+        {(resource.data || []).map((area) => (
+          <section className="area-editor" key={str(area, "assignment_id")}>
+            <h3>{str(area, "location_name")}</h3>
+            <p className="muted">{str(area, "address")}</p>
+            <p>คนงานขั้นต่ำ {str(area, "required_workers")} คน</p>
+            <div className="toolbar">
+              <Button variant="secondary" onClick={() => setSelected(area)}>
+                แก้ไขพื้นที่และอุปกรณ์
+              </Button>
+              <Button variant="secondary" onClick={() => setLocation(area)}>
+                แก้ไขชื่อ ที่อยู่ และพิกัด
+              </Button>
+            </div>
+          </section>
+        ))}
+        {!resource.data?.length && (
+          <p className="muted">ยังไม่มีพื้นที่ในสัญญานี้</p>
+        )}
+      </Resource>
+      <div className="modal-footer">
+        <Button variant="secondary" onClick={onClose}>
+          ปิด
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function ContractLocationEditor({
+  area,
+  onClose,
+  onDone,
+}: {
+  area: Row;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { list, api } = useSession();
+  const id = str(area, "location_id");
+  const resource = useData(
+    async (signal) =>
+      (await list("locations?limit=100", signal)).find(
+        (location) => str(location, "location_id") === id,
+      ),
+    [id],
+  );
+  if (!resource.data)
+    return (
+      <Modal title="แก้ไขข้อมูลสถานที่" onClose={onClose}>
+        <Resource {...resource} retry={resource.refresh}>
+          <p>ไม่พบข้อมูลสถานที่ กรุณารีเฟรชรายการแล้วลองใหม่</p>
+        </Resource>
+        <div className="modal-footer">
+          <Button variant="secondary" onClick={onClose}>
+            กลับรายการพื้นที่
+          </Button>
+        </div>
+      </Modal>
+    );
+  return (
+    <Resource {...resource} retry={resource.refresh}>
+      {resource.data && (
+        <ActionForm
+          title="แก้ไขข้อมูลสถานที่"
+          onClose={onClose}
+          onDone={onDone}
+          submit={(fd) =>
+            api.patch(`locations/${id}`, {
+              location_name: fdString(fd, "location_name"),
+              address: fdString(fd, "address"),
+              latitude: fdNumber(fd, "latitude"),
+              longitude: fdNumber(fd, "longitude"),
+            })
+          }
+        >
+          <Inputs
+            fields={[
+              {
+                name: "location_name",
+                label: "ชื่อพื้นที่",
+                value: str(resource.data, "location_name"),
+                maxLength: 255,
+              },
+              {
+                name: "address",
+                label: "ที่อยู่",
+                value: str(resource.data, "address"),
+              },
+              {
+                name: "latitude",
+                label: "ละติจูด",
+                value: str(resource.data, "latitude"),
+                pattern: "-?[0-9]+(\\.[0-9]+)?",
+              },
+              {
+                name: "longitude",
+                label: "ลองจิจูด",
+                value: str(resource.data, "longitude"),
+                pattern: "-?[0-9]+(\\.[0-9]+)?",
+              },
+            ]}
+          />
+          <p className="notice">
+            การแก้ชื่อและที่อยู่มีผลกับทุกสัญญาที่อ้างถึงสถานที่นี้
+            พื้นที่ที่มีกะงานแล้วไม่สามารถเปลี่ยนพิกัดย้อนหลังได้
+          </p>
+        </ActionForm>
+      )}
+    </Resource>
+  );
+}
+
+function ContractInfoEditor({
+  row,
+  onClose,
+  onDone,
+  navigation,
+}: {
+  row: Row;
+  onClose: () => void;
+  onDone: () => void;
+  navigation?: ReactNode;
 }) {
   const { api } = useSession();
   return (
@@ -46,6 +245,7 @@ export function ContractDetailsEditor({
         });
       }}
     >
+      {navigation}
       <Inputs
         fields={[
           {
@@ -94,11 +294,13 @@ export function AssignmentEditor({
   area,
   onClose,
   onDone,
+  navigation,
 }: {
   torID: string;
   area?: Row;
   onClose: () => void;
   onDone: () => void;
+  navigation?: ReactNode;
 }) {
   const { api, list } = useSession();
   const resource = useData(
@@ -127,6 +329,7 @@ export function AssignmentEditor({
           equipment={resource.data.equipment}
           onClose={onClose}
           onDone={onDone}
+          navigation={navigation}
         />
       )}
     </Resource>
@@ -141,6 +344,7 @@ function AssignmentFields({
   equipment,
   onClose,
   onDone,
+  navigation,
 }: {
   torID: string;
   area?: Row;
@@ -149,6 +353,7 @@ function AssignmentFields({
   equipment: Row[];
   onClose: () => void;
   onDone: () => void;
+  navigation?: ReactNode;
 }) {
   const { api } = useSession();
   const originals = rows(initial.items);
@@ -195,6 +400,7 @@ function AssignmentFields({
           : api.post(`contracts/${torID}/assignments`, body);
       }}
     >
+      {navigation}
       <Field label="สถานที่">
         <select
           name="location_id"
