@@ -343,8 +343,8 @@ export function CheckIn({
               <h3>2. สแกน QR ของพื้นที่</h3>
               <p>
                 {qr
-                  ? "ได้รับ QR แล้ว ระบบจะตรวจลายเซ็น พื้นที่ และเวลาหมดอายุ"
-                  : "ขอ QR ปัจจุบันจากผู้ดูแลงาน"}
+                  ? "ได้รับ QR แล้ว ระบบจะตรวจลายเซ็น พื้นที่ กะงาน และ GPS"
+                  : "สแกนป้าย QR ที่ติดไว้ในพื้นที่ปฏิบัติงาน"}
               </p>
             </div>
           </div>
@@ -385,7 +385,9 @@ export function CheckIn({
             />
           </Field>
           {expires && expires <= tick && (
-            <p className="error-box">QR อาจหมดอายุแล้ว กรุณาสแกนใหม่</p>
+            <p className="error-box">
+              QR รุ่นเดิมหมดอายุแล้ว กรุณาสแกนป้าย QR ประจำพื้นที่
+            </p>
           )}
           {error && <ErrorBox error={error} />}
           <div className="modal-footer">
@@ -397,7 +399,9 @@ export function CheckIn({
                   if (!position || gpsError)
                     throw new Error(gpsError || "กรุณาตรวจ GPS");
                   if (expires !== null && expires <= Date.now())
-                    throw new Error("QR หมดอายุแล้ว กรุณาสแกนใหม่");
+                    throw new Error(
+                      "QR รุ่นเดิมหมดอายุแล้ว กรุณาสแกนป้าย QR ประจำพื้นที่",
+                    );
                   await api.post("attendance/check-in", {
                     schedule_id: str(row, "schedule_id"),
                     latitude: position.latitude,

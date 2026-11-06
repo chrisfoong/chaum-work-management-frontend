@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { FileText, MapPin, Plus, Trash2 } from "lucide-react";
 import { useSession } from "./auth";
+import { ContractDetailsEditor, AssignmentEditor } from "./editing";
 import {
   InviteUserForm,
   RenewInvitationForm,
@@ -102,11 +103,13 @@ export function Contracts() {
   );
 }
 function ContractDetail({ row, onBack }: { row: Row; onBack: () => void }) {
-  const { get, list, api } = useSession();
+  const { get, list, api, user } = useSession();
   const id = str(row, "tor_id");
   const [tab, setTab] = useState("areas");
   const [edit, setEdit] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [detailsEdit, setDetailsEdit] = useState(false);
+  const [scopeEdit, setScopeEdit] = useState<Row | "new" | null>(null);
   const resource = useData(
     async (signal) => ({
       detail: object(await get(`contracts/${id}`, signal)),
@@ -121,9 +124,23 @@ function ContractDetail({ row, onBack }: { row: Row; onBack: () => void }) {
       <Panel
         title={str(r, "project_name")}
         action={
-          <Button variant="secondary" onClick={() => setEdit(true)}>
-            เปลี่ยนสถานะ
-          </Button>
+          <div className="toolbar">
+            <Button variant="secondary" onClick={() => setEdit(true)}>
+              เปลี่ยนสถานะ
+            </Button>
+            {user.role === "supervisor" && (
+              <Button
+                variant="secondary"
+                disabled={
+                  !str(r, "updated_at") ||
+                  ["complete", "cancelled"].includes(str(r, "status"))
+                }
+                onClick={() => setDetailsEdit(true)}
+              >
+                แก้ไขรายละเอียด
+              </Button>
+            )}
+          </div>
         }
       >
         <div className="contract-summary">
@@ -164,6 +181,27 @@ function ContractDetail({ row, onBack }: { row: Row; onBack: () => void }) {
         )}
       </Panel>
       {downloadError && <ErrorBox error={downloadError} />}
+      {detailsEdit && (
+        <ContractDetailsEditor
+          row={r}
+          onClose={() => setDetailsEdit(false)}
+          onDone={() => {
+            setDetailsEdit(false);
+            resource.refresh();
+          }}
+        />
+      )}
+      {scopeEdit && (
+        <AssignmentEditor
+          torID={id}
+          area={scopeEdit === "new" ? undefined : scopeEdit}
+          onClose={() => setScopeEdit(null)}
+          onDone={() => {
+            setScopeEdit(null);
+            resource.refresh();
+          }}
+        />
+      )}
       <div className="tabs">
         {[
           ["areas", "พื้นที่และคนงาน"],
@@ -180,9 +218,23 @@ function ContractDetail({ row, onBack }: { row: Row; onBack: () => void }) {
       </div>
       <Resource {...resource} retry={resource.refresh}>
         {tab === "areas" ? (
-          <Panel>
+          <Panel
+            action={
+              user.role === "supervisor" &&
+              !["complete", "cancelled"].includes(str(r, "status")) ? (
+                <Button onClick={() => setScopeEdit("new")}>
+                  เพิ่มพื้นที่ใน TOR
+                </Button>
+              ) : undefined
+            }
+          >
             <Table
               data={resource.data?.areas || []}
+              onRow={
+                user.role === "supervisor"
+                  ? (area) => setScopeEdit(area)
+                  : undefined
+              }
               columns={[
                 { key: "location_name", label: "พื้นที่" },
                 { key: "required_workers", label: "คนงานขั้นต่ำ" },
@@ -692,6 +744,18 @@ export function Catalog() {
         : [
             { name: "first_name", label: "ชื่อ", value: str(r, "first_name") },
             { name: "last_name", label: "นามสกุล", value: str(r, "last_name") },
+            {
+              name: "phone_number",
+              label: "โทรศัพท์",
+              value: str(r, "phone_number"),
+              pattern: "[0-9]{10}",
+            },
+            { name: "bank_name", label: "ธนาคาร", value: str(r, "bank_name") },
+            {
+              name: "bank_account_no",
+              label: "เลขบัญชี",
+              value: str(r, "bank_account_no"),
+            },
             {
               name: "daily_wage",
               label: "ค่าจ้างต่อวัน",

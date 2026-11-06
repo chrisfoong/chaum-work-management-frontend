@@ -24,3 +24,11 @@ test("QR countdown uses issuer expiry instead of resetting at scan time", () => 
     ).toString("base64url") + ".signature";
   assert.equal(qrExpiry(wrong), null);
 });
+
+test("printed v2 QR has no client countdown", () => {
+  const token =
+    Buffer.from(JSON.stringify({ assignment_id: "area", v: 2 })).toString(
+      "base64url",
+    ) + ".signature";
+  assert.equal(qrExpiry(token), null);
+});

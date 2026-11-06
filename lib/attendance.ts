@@ -12,6 +12,7 @@ export function qrExpiry(token: string): number | null {
         .padEnd(Math.ceil(payload.length / 4) * 4, "="),
     );
     const claims = JSON.parse(text);
+    if (claims.v === 2 && typeof claims.assignment_id === "string") return null;
     if (
       !Number.isSafeInteger(claims.exp) ||
       !Number.isSafeInteger(claims.iat) ||

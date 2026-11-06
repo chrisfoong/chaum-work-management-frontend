@@ -65,7 +65,6 @@ const menu = {
     ["leave", "แจ้งลา / หาคนแทน", Users],
     ["procurement", "อุปกรณ์และจัดซื้อ", Package],
     ["operations", "สรุปการดำเนินงาน", PieChart],
-    ["qr", "QR เข้างาน", QrCode],
   ],
   worker: [
     ["home", "หน้าหลัก", Home],
@@ -347,10 +346,12 @@ function Dashboard({ navigate }: { navigate: (s: Section) => void }) {
                   </Button>
                 </>
               )}
-              <Button variant="secondary" onClick={() => navigate("qr")}>
-                <QrCode />
-                ออก QR พื้นที่
-              </Button>
+              {user.role === "supervisor" && (
+                <Button variant="secondary" onClick={() => navigate("qr")}>
+                  <QrCode />
+                  ออก QR พื้นที่
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() =>

@@ -35,9 +35,21 @@
 - เงินใช้ decimal string/BigInt สตางค์, GPS คำนวณระยะเชิงแสดงผลเท่านั้น การตัดสินใช้ Go
 - ไม่เขียน `to_buy_qty` และไม่รัน SQL/migrations ใดจาก Frontend
 - กะสิ้นสุดใช้ timestamps จาก API +8 ชั่วโมง; ไม่เดาสถานะขาดจากการไม่มี attendance
-- QR ต้องได้จาก staff API มีลายเซ็น/expiry; ไม่สร้าง QR ปลอมเพื่อผ่านเช็คอิน
+- QR ถาวรต้องได้จาก Supervisor API มีลายเซ็นและผูก assignment; ไม่มี countdown และไม่สร้าง QR ปลอมเพื่อผ่านเช็คอิน
 - Assistant เห็น operational counts/procurement เท่านั้น ไม่มี wage/penalty/profit
 
 ## ขอบเขตการตรวจ
 
 ตรวจ source contract, build/typecheck/lint, API/proxy tests และ UI preview แยกแต่ละ role. ยังต้องตรวจ LINE login จริงบน HTTPS ของ frontend นี้, private Storage, GPS/QR จริง และ LINE delivery บนฐานทดสอบแยกก่อนนับ end-to-end ผ่าน
+
+## Supervisor corrections adopted 2026-11-06
+
+| Use Case | Existing page                           | Added API / behavior                                                                                                                                   |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1S       | Contract details and area list          | PATCH contracts/:id/details; stale timestamp, date/financial history and owned PNG checks                                                              |
+| 7S       | Contract areas, master locations and QR | POST contracts/:id/assignments; GET/PATCH assignments/:id/scope; original items retained; block after schedules/survey; permanent Supervisor-issued QR |
+| 8S       | Finance invoice tab                     | PATCH invoices/:id; pending-only, decimal validation, stale amount check                                                                               |
+| 9S       | Master personnel                        | Optional phone/bank/account edits; Supervisor-only bank reads; last active Supervisor protected; Worker suspension disables availability               |
+| 5S       | Existing payroll confirmation           | Verified confirmer stored in managed_by_id, reject repeated mark-paid; no separate processor history                                                   |
+
+These are extensions of existing use cases, not extra actors or client-chosen roles. No new database table or diagram asset was added. Runtime/database E2E remains pending until isolated PostgreSQL is available.

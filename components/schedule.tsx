@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { QrCode, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "./auth";
@@ -714,21 +714,15 @@ export function StaffQR() {
   const areas = useData((signal) => list("assignments?limit=100", signal), []);
   const [id, setID] = useState("");
   const [token, setToken] = useState("");
-  const [expires, setExpires] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-  const remaining = Math.max(0, Math.ceil((Date.parse(expires) - now) / 1000));
-  const expired = !!token && (!Number.isFinite(remaining) || remaining === 0);
+  const output = useRef<HTMLDivElement>(null);
+  const area = areas.data?.find((r) => str(r, "assignment_id") === id);
   return (
     <>
       <Heading
         title="QR เช็คอินพื้นที่"
-        description="ให้พนักงานสแกน QR เพื่อเช็กอิน พร้อมเปิดตำแหน่งที่ตั้ง QR มีอายุ 5 นาที"
+        description="สร้าง QR ประจำพื้นที่สำหรับดาวน์โหลดและพิมพ์ติดหน้างาน พนักงานต้องสแกนพร้อมตรวจ GPS และกะงาน"
       />
       <Panel>
         <Field label="พื้นที่">
@@ -738,6 +732,7 @@ export function StaffQR() {
             onChange={(e) => {
               setID(e.target.value);
               setToken("");
+              setError("");
             }}
           >
             <option value="">เลือกพื้นที่</option>
@@ -758,8 +753,12 @@ export function StaffQR() {
             setError("");
             try {
               const value = object(await api.post(`assignments/${id}/qr`));
-              setToken(str(value, "qr_token"));
-              setExpires(str(value, "expires_at"));
+              const next = str(value, "qr_token");
+              if (!next || value.permanent !== true)
+                throw new Error(
+                  "Backend ยังไม่รองรับ QR ถาวร กรุณาอัปเดตระบบก่อนพิมพ์ป้าย",
+                );
+              setToken(next);
             } catch (e) {
               setError(e instanceof Error ? e.message : "สร้าง QR ไม่สำเร็จ");
             } finally {
@@ -767,22 +766,42 @@ export function StaffQR() {
             }
           }}
         >
-          <QrCode size={18} /> {token ? "สร้าง QR ใหม่" : "สร้าง QR"}
+          <QrCode size={18} /> {token ? "เปิด QR ประจำพื้นที่" : "สร้าง QR"}
         </Button>
-        {areas.error && <ErrorBox error={areas.error} retry={areas.refresh} />}{" "}
-        {error && <ErrorBox error={error} />}{" "}
+        {areas.error && <ErrorBox error={areas.error} retry={areas.refresh} />}
+        {error && <ErrorBox error={error} />}
         {token && (
-          <div className="qr-output">
-            {expired ? (
-              <p role="alert" className="error-box">
-                QR หมดอายุแล้ว กรุณากดสร้าง QR ใหม่
-              </p>
-            ) : (
-              <QRCodeSVG value={token} size={260} level="M" />
-            )}
-            {!expired && <strong>เหลือ {remaining} วินาที</strong>}
-            <p>หมดอายุ {clock(expires)} น.</p>
-            <small>เมื่อหมดอายุ ให้กดสร้าง QR ใหม่</small>
+          <div className="qr-output" ref={output}>
+            <QRCodeSVG value={token} size={260} level="M" marginSize={4} />
+            <strong>
+              {str(area || {}, "project_name")} ·{" "}
+              {str(area || {}, "location_name")}
+            </strong>
+            <p>QR ถาวรสำหรับพื้นที่นี้ ไม่หมดอายุตามระยะเวลา</p>
+            <small>
+              ยังต้องมีกะงาน สัญญาที่ใช้งานได้ และ GPS ในระยะที่กำหนด
+            </small>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const svg = output.current?.querySelector("svg");
+                if (!svg) return;
+                const clone = svg.cloneNode(true) as SVGSVGElement;
+                clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+                const url = URL.createObjectURL(
+                  new Blob([new XMLSerializer().serializeToString(clone)], {
+                    type: "image/svg+xml",
+                  }),
+                );
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `chaum-area-${id}.svg`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              ดาวน์โหลด QR สำหรับพิมพ์
+            </Button>
           </div>
         )}
       </Panel>

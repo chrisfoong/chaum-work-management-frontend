@@ -46,7 +46,11 @@ export function allowed(method: string, parts: string[]): boolean {
     ["POST", `users/${uuid}/invitation(/cancel)?`],
     ["GET", `requisitions/${uuid}`],
     ["GET", `contracts/${uuid}`],
-    ["PATCH", `(contracts|users|locations|equipment)/${uuid}`],
+    ["PATCH", `(contracts|users|locations|equipment|invoices)/${uuid}`],
+    ["PATCH", `contracts/${uuid}/details`],
+    ["POST", `contracts/${uuid}/assignments`],
+    ["GET", `assignments/${uuid}/scope`],
+    ["PATCH", `assignments/${uuid}/scope`],
     ["GET", `leave-requests/${uuid}(/candidates)?`],
     ["POST", `leave-requests/${uuid}/(review|replacement)`],
     [
@@ -61,6 +65,11 @@ export function allowed(method: string, parts: string[]): boolean {
     ["POST", `notifications/${uuid}/retry`],
     ["POST", `(payroll|invoices)/${uuid}/mark-paid`],
   ];
+  const staffCorrection =
+    /^(contracts\/[^/]+\/(details|assignments)|assignments\/[^/]+\/scope|invoices\/[^/]+)$/.test(
+      path,
+    );
+  if (platform === "liff" && staffCorrection) return false;
   return patterns.some(
     ([m, p]) => m === method && new RegExp(`^${p}$`).test(path),
   );

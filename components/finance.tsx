@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useSession } from "./auth";
+import { InvoiceEditor } from "./editing";
 import {
   ActionForm,
   AddButton,
@@ -299,6 +300,7 @@ export function Finance() {
   const [tor, setTor] = useState("");
   const [action, setAction] = useState("");
   const [selected, setSelected] = useState<Row | null>(null);
+  const [invoiceEdit, setInvoiceEdit] = useState<Row | null>(null);
   const [error, setError] = useState("");
   const contracts = useData(
     (signal) => list("contracts?limit=100", signal),
@@ -485,6 +487,21 @@ export function Finance() {
                 { key: "expected_amount", label: "ยอดวางบิล", format: "money" },
                 { key: "net_received", label: "รับจริง", format: "money" },
                 {
+                  key: "edit",
+                  label: "แก้ไข",
+                  format: (r) =>
+                    r.status === "pending" ? (
+                      <Button
+                        variant="secondary"
+                        onClick={() => setInvoiceEdit(r)}
+                      >
+                        แก้ไขใบวางบิล
+                      </Button>
+                    ) : (
+                      "—"
+                    ),
+                },
+                {
                   key: "is_paid",
                   label: "รับเงินแล้ว",
                   format: (r) =>
@@ -495,6 +512,16 @@ export function Finance() {
             />
           </Resource>
         </Panel>
+      )}
+      {invoiceEdit && (
+        <InvoiceEditor
+          row={invoiceEdit}
+          onClose={() => setInvoiceEdit(null)}
+          onDone={() => {
+            setInvoiceEdit(null);
+            invoices.refresh();
+          }}
+        />
       )}
       {financialRow && (
         <Modal

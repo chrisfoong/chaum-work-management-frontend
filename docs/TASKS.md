@@ -170,3 +170,20 @@ Local develop was fast-forwarded to the published frontend before applying this 
 ## Area QR lifetime — 2026-10-28
 
 User requested changing area QR validity from 60 seconds to five minutes. Issuance, signed lifetime validation, frontend scan validation and staff instructions now agree on 300 seconds. GPS radius/accuracy, assignment binding and duplicate attendance guards remain unchanged. Staff QR continues to be generated on demand and regenerated with its button after expiry; there is no automatic 20-second rotation on this page. No schema or private config changes. Verification: frontend 46 tests, full lint, typecheck, formatting and Docker production build passed; backend full isolated-loopback database tests, gofmt, go vet and go build passed. QR validity boundary test accepts 4:59 and rejects exactly 5:00, and retains signature/area rejection. Running Docker services were not replaced; real-device scanning of a newly issued five-minute QR remains unverified.
+
+## Permanent printed area QR — 2026-11-05
+
+User chose Supervisor-generated permanent signs to minimize changes to document images. QR v2 binds the assignment with HMAC-SHA256, has no expiry, and is stable while the assignment/signing key is unchanged. Supervisor-only issuance; Worker check-in still checks identity, owned shift, approved leave, active/in-date contract and GPS. Frontend removes staff countdown and Assistant issuance entry, offers SVG download for printing, and directs Worker to the area sign. No schema/env/shared database changes. Legacy five-minute codes must be replaced; signing-key rotation invalidates all signs. Verification: Backend 217 test/subtest pass events, zero failures and 35 skipped integration events (no isolated loopback PostgreSQL available); gofmt, vet and build passed. Focused signature/version/assignment/key-rotation and Assistant HTTP denial tests passed. Frontend 47 tests, typecheck, lint, formatting and production build passed. Docker startup was requested but its engine did not become responsive; no Supabase writes. New contract recheck integration test remains skipped. No commit/push/deployment or real-device scan claimed.
+
+## Supervisor correction workflows - 2026-11-06
+
+User approved contract detail/scope correction, staff contact/bank correction, last-active-Supervisor protection, pending invoice editing and payment confirmer/replay protection. Added Supervisor-only endpoints, existing-style frontend forms, stale-form checks, exact money validation and read models that expose staff bank details only to Supervisor. Scope edits stop before schedules/survey/purchases; original items cannot be deleted. Location coordinates cannot change once scheduled. Payment records confirmer in existing NOT NULL managed_by_id; no separate processor history or paid_at is invented. No schema/env/shared Supabase mutations.
+
+Verification: Frontend 48 tests, typecheck, lint, formatting and production build passed. Backend latest recorded 221 test/subtest events passed, zero failures; 38 integration events skipped without isolated PostgreSQL. Added validation, Assistant endpoint-denial, last-Supervisor and proxy route tests. New database edit/payment/contract tests remain unverified. Subsequent SQL-cast/location-lock changes require the final recorded rerun. Docker CLI works but Engine API requests hang despite user-reported running status; no existing containers restarted. No commit/push/deployment or real-device proof.
+
+## Develop push verification - 2026-11-06
+
+- Permanent area QR UI and guarded administrative edit forms included.
+- 48 tests passed; lint, typecheck, formatting and production build passed.
+- Production build used a source copy without secret files.
+- Live end-to-end use cases remain a separate verification; server health is not proof of all workflows.
