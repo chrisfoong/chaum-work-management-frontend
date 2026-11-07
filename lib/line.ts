@@ -59,6 +59,25 @@ export function startLINELogin(
   liff.login({ redirectUri });
 }
 
+export function automaticLINELogin(
+  liff: {
+    isLoggedIn: () => boolean;
+    isInClient: () => boolean;
+    login: (options: { redirectUri: string }) => void;
+  },
+  redirectUri: string,
+  storage: Pick<Storage, "getItem" | "setItem">,
+  platform: "web" | "worker",
+): "logged-in" | "redirecting" | "retry-required" | "open-in-line" {
+  if (liff.isLoggedIn()) return "logged-in";
+  if (liff.isInClient()) return "open-in-line";
+  const key = `chaum-auto-login-${platform}`;
+  if (storage.getItem(key)) return "retry-required";
+  storage.setItem(key, "1");
+  liff.login({ redirectUri });
+  return "redirecting";
+}
+
 // Loopback pages may show Login/Preview, but LINE authentication starts at its registered endpoint.
 export function isLocalLINEEntry(href: string): boolean {
   try {

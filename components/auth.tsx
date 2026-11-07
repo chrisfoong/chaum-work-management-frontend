@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import {
   initializeLIFF,
   startLINELogin,
+  automaticLINELogin,
   isLocalLINEEntry,
   lineEntryURL,
 } from "@/lib/line";
@@ -75,7 +76,10 @@ export function AuthProvider({
     if (previewRole) return;
     let alive = true;
     (async () => {
-      if (isLocalLINEEntry(window.location.href)) return;
+      if (isLocalLINEEntry(window.location.href)) {
+        if (alive) setLoading(false);
+        return;
+      }
       const platform =
         entryPlatform || sessionStorage.getItem("chaum-platform");
       if (platform !== "web" && platform !== "worker") {
@@ -94,6 +98,7 @@ export function AuthProvider({
         if (alive) setLoading(false);
         return;
       }
+      sessionStorage.removeItem(`chaum-auto-login-${platform}`);
       const token = () => liff.getIDToken();
       if (!token())
         throw new Error(
@@ -177,6 +182,9 @@ export function AuthProvider({
                 liff.logout();
                 clearInvitation();
                 sessionStorage.removeItem("chaum-platform");
+                sessionStorage.removeItem("chaum-auto-login-web");
+                sessionStorage.removeItem("chaum-auto-login-worker");
+                sessionStorage.setItem("chaum-signed-out", "1");
                 router.replace("/");
               });
             },
@@ -207,12 +215,20 @@ export function Login({
 }) {
   const [platform, setPlatform] = useState<"web" | "worker">(defaultPlatform);
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState(initial);
   useEffect(() => {
     // Resume an existing LINE session even when LINE returns to the bare
     // endpoint without callback parameters. Authentication/role checks remain
     // in AuthProvider; an explicit error still requires a fresh login action.
-    if (initial || isLocalLINEEntry(window.location.href)) return;
+    if (
+      initial ||
+      isLocalLINEEntry(window.location.href) ||
+      sessionStorage.getItem("chaum-signed-out")
+    ) {
+      queueMicrotask(() => setChecking(false));
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     let alive = true;
     const invitedPlatform = invitationPlatformFromURL(window.location.href);
@@ -231,22 +247,40 @@ export function Login({
             : defaultPlatform;
     sessionStorage.setItem("chaum-platform", callbackPlatform);
     const id = platformID(callbackPlatform);
-    if (!id) return;
+    if (!id) {
+      queueMicrotask(() => setChecking(false));
+      return;
+    }
     initializeLIFF(id)
       .then((liff) => {
-        if (alive) setPlatform(callbackPlatform);
+        if (!alive) return;
+        setPlatform(callbackPlatform);
         captureInvitation();
-        if (alive && liff.isLoggedIn())
+        const state = automaticLINELogin(
+          liff,
+          invitationLoginRedirect(
+            window.location.origin,
+            callbackPlatform,
+            captureInvitation(),
+          ),
+          sessionStorage,
+          callbackPlatform,
+        );
+        if (state === "logged-in")
           window.location.replace(
             callbackPlatform === "worker" ? "/worker" : "/web",
           );
+        if (state === "retry-required")
+          setError("LINE ยังไม่ส่งสถานะเข้าสู่ระบบกลับมา กรุณาลองอีกครั้ง");
+        if (state === "open-in-line")
+          setError("กรุณาเปิดแอปผ่านลิงก์ในแชต LINE อีกครั้ง");
       })
       .catch((e) => {
         if (alive)
           setError(e instanceof Error ? e.message : "เชื่อมต่อ LINE ไม่สำเร็จ");
       })
       .finally(() => {
-        if (alive) setBusy(false);
+        if (alive) setChecking(false);
       });
     return () => {
       alive = false;
@@ -255,6 +289,8 @@ export function Login({
   async function login() {
     setBusy(true);
     setError("");
+    sessionStorage.removeItem("chaum-signed-out");
+    sessionStorage.removeItem(`chaum-auto-login-${platform}`);
     try {
       const id = platformID(platform);
       if (!id)
@@ -280,6 +316,15 @@ export function Login({
       setBusy(false);
     }
   }
+  if (checking && !error)
+    return (
+      <main className="auth-loading-screen" aria-label="กำลังเข้าสู่ระบบ">
+        <div className="auth-loading-content">
+          <Brand />
+          <Loading />
+        </div>
+      </main>
+    );
   return (
     <main className="login-entry-screen">
       <section className="login-entry-panel" aria-labelledby="login-title">
