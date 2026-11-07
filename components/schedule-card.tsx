@@ -3,7 +3,7 @@ import { Clock, MapPin } from "lucide-react";
 import { Badge, Button } from "./ui";
 import { clock, dateThai, todayBangkok } from "@/lib/domain";
 import { str, type Row } from "@/lib/types";
-import { leaveStatusText } from "@/lib/leave";
+import { leaveStatusText, splitLeaveReason } from "@/lib/leave";
 import {
   attendanceActions,
   checkoutTimeReached,
@@ -59,6 +59,14 @@ export function ScheduleCard({
           <br />
           {leave.is_advance_notice === true ? "ลาล่วงหน้า" : "ลาฉุกเฉิน"} ·{" "}
           {dateThai(str(leave, "leave_date"))}
+          {leave.status === "rejected" &&
+            splitLeaveReason(leave.reason).rejectionReason && (
+              <>
+                <br />
+                เหตุผลที่ไม่อนุมัติ:{" "}
+                {splitLeaveReason(leave.reason).rejectionReason}
+              </>
+            )}
         </p>
       )}
       {checkedIn && (

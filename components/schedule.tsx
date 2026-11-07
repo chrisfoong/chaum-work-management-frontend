@@ -457,6 +457,9 @@ function LeaveReview({
               ...(fdString(fd, "worker")
                 ? { replacement_worker_id: fdString(fd, "worker") }
                 : {}),
+              ...(decision === "rejected"
+                ? { reason: fdString(fd, "reason") }
+                : {}),
             })
       }
     >
@@ -499,6 +502,18 @@ function LeaveReview({
                   "worker_id",
                   "full_name",
                 ),
+              },
+            ]}
+          />
+        )}
+        {row.status === "pending" && decision === "rejected" && (
+          <Inputs
+            fields={[
+              {
+                name: "reason",
+                label: "เหตุผลที่ไม่อนุมัติ",
+                type: "textarea",
+                required: true,
               },
             ]}
           />

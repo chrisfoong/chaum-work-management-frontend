@@ -817,7 +817,7 @@ function PurchaseForm({
                             num(it, "to_buy_qty") - num(it, "actual_qty"),
                           )}
                           required
-                          value={quantities[id] || "0"}
+                          value={quantities[id] ?? "0"}
                           onChange={(e) =>
                             setQuantities((v) => ({
                               ...v,
@@ -832,7 +832,7 @@ function PurchaseForm({
                           inputMode="decimal"
                           pattern="[0-9]+(\.[0-9]{1,2})?"
                           required
-                          value={prices[id] || "0.00"}
+                          value={prices[id] ?? "0.00"}
                           onChange={(e) =>
                             setPrices((v) => ({ ...v, [id]: e.target.value }))
                           }

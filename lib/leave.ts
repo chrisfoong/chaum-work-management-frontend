@@ -16,6 +16,22 @@ export function leaveStatusText(status: unknown): string {
       : "ยื่นใบลาแล้ว · รอพิจารณา";
 }
 
+export function splitLeaveReason(value: unknown): {
+  reason: string;
+  rejectionReason: string;
+} {
+  const raw = str({ v: value }, "v");
+  const marker = "\n[Rejection] ";
+  const pos = raw.lastIndexOf(marker);
+  if (pos >= 0) {
+    return {
+      reason: raw.slice(0, pos),
+      rejectionReason: raw.slice(pos + marker.length),
+    };
+  }
+  return { reason: raw, rejectionReason: "" };
+}
+
 export function eligibleLeaveDates(
   schedules: Row[],
   leaves: Row[],

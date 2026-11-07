@@ -4,6 +4,7 @@ import {
   eligibleLeaveDates,
   leaveForSchedule,
   leaveStatusText,
+  splitLeaveReason,
 } from "../lib/leave";
 
 test("leave dates exclude all previously submitted states including rejected", () => {
@@ -56,4 +57,12 @@ test("schedule cards match leave dates and distinguish approval states", () => {
   assert.match(leaveStatusText("approved"), /อนุมัติการลาแล้ว/);
   assert.match(leaveStatusText("rejected"), /ต้องเข้างานตามกะ/);
   assert.match(leaveStatusText("pending"), /รอพิจารณา/);
+  assert.deepEqual(splitLeaveReason("พบแพทย์\n[Rejection] หาคนแทนไม่ทัน"), {
+    reason: "พบแพทย์",
+    rejectionReason: "หาคนแทนไม่ทัน",
+  });
+  assert.deepEqual(splitLeaveReason("พบแพทย์"), {
+    reason: "พบแพทย์",
+    rejectionReason: "",
+  });
 });
