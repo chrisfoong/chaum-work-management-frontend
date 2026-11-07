@@ -137,6 +137,7 @@ input::file-selector-button {
 }
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
   max-width: 100%;
 }
@@ -2090,4 +2091,18 @@ textarea[aria-invalid="true"] {
   .evidence-image.combined img {
     height: auto;
   }
+}
+
+.brand-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text, #243b32);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 210px;
+}
+.brand.small .brand-name {
+  font-size: 8px;
+  max-width: 150px;
 }

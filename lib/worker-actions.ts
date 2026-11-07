@@ -37,3 +37,12 @@ export function checkoutTimeReached(schedule: Row, now: number): boolean {
   const end = Date.parse(str(schedule, "shift_end_at"));
   return Number.isFinite(end) && now >= end;
 }
+
+export function checkoutReviewRequired(
+  schedule: Row,
+  attendance: Row | undefined,
+  now: number,
+): boolean {
+  const { checkedIn, checkedOut } = attendanceActions(attendance);
+  return checkedIn && !checkedOut && checkoutTimeReached(schedule, now);
+}

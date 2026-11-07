@@ -4,7 +4,11 @@ import { Badge, Button } from "./ui";
 import { clock, dateThai, todayBangkok } from "@/lib/domain";
 import { str, type Row } from "@/lib/types";
 import { leaveStatusText } from "@/lib/leave";
-import { attendanceActions, checkoutTimeReached } from "@/lib/worker-actions";
+import {
+  attendanceActions,
+  checkoutTimeReached,
+  checkoutReviewRequired,
+} from "@/lib/worker-actions";
 import { useCurrentTime } from "@/lib/use-current-time";
 
 export function ScheduleCard({
@@ -25,11 +29,16 @@ export function ScheduleCard({
   const { checkedIn, checkedOut } = attendanceActions(attendance);
   const now = useCurrentTime();
   const timeReached = checkoutTimeReached(row, now);
+  const missingCheckout = checkoutReviewRequired(row, attendance, now);
   return (
     <section className="shift-card">
       <div className="shift-heading">
         <span className="eyebrow">{dateThai(str(row, "work_date"))}</span>
-        <Badge value={row.shift_status || row.status} />
+        {missingCheckout ? (
+          <span className="badge">ขาดการเช็กเอาท์—รอตรวจสอบ</span>
+        ) : (
+          <Badge value={row.shift_status || row.status} />
+        )}
       </div>
       <h2>{str(row, "project_name")}</h2>
       <p>
@@ -57,7 +66,15 @@ export function ScheduleCard({
           เช็กอินแล้ว {clock(str(attendance, "check_in"))}
           {checkedOut
             ? ` · เช็กเอาท์แล้ว ${clock(str(attendance, "check_out"))}`
-            : " · กำลังปฏิบัติงาน"}
+            : timeReached
+              ? " · หมดกะแล้ว ยังไม่ได้เช็กเอาท์"
+              : " · กำลังปฏิบัติงาน"}
+        </p>
+      )}
+      {missingCheckout && (
+        <p className="notice" role="status">
+          กรุณาส่งผลงานและเช็กเอาท์ หากลืมเช็กเอาท์ให้แจ้งผู้ดูแลงาน
+          ระบบยังไม่ประมวลผลค่าจ้างของรายการนี้
         </p>
       )}
       {checkedIn && !checkedOut && !timeReached && (

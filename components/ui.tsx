@@ -23,11 +23,12 @@ export function Brand({ small = false }: { small?: boolean }) {
       <Image
         className="brand-logo"
         src="/brand/chaum-logo.png"
-        alt="ชะอุ่ม · CHAUM"
+        alt="CHAUM RESOURCE MANAGEMENT"
         width={1774}
         height={887}
         priority
       />
+      <span className="brand-name">CHAUM RESOURCE MANAGEMENT</span>
     </div>
   );
 }

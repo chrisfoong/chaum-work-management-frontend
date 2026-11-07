@@ -5,6 +5,7 @@ import {
   canAddEquipment,
   attendanceActions,
   checkoutTimeReached,
+  checkoutReviewRequired,
 } from "../lib/worker-actions";
 const equipment = [
   { equipment_id: "one" },
@@ -64,4 +65,22 @@ test("checkout waits for scheduled end across midnight, exact boundary allowed",
     true,
   );
   assert.equal(checkoutTimeReached({}, Date.now()), false);
+});
+
+test("missing checkout starts at shift end and clears after an actual checkout", () => {
+  const schedule = { shift_end_at: "2026-11-07T09:42:00+07:00" };
+  const end = Date.parse(String(schedule.shift_end_at));
+  const open = { check_in: "2026-11-07T01:43:00+07:00" };
+  assert.equal(checkoutReviewRequired(schedule, open, end - 1), false);
+  assert.equal(checkoutReviewRequired(schedule, open, end), true);
+  assert.equal(checkoutReviewRequired(schedule, undefined, end), false);
+  assert.equal(
+    checkoutReviewRequired(
+      schedule,
+      { ...open, check_out: "2026-11-07T09:43:00+07:00" },
+      end + 60000,
+    ),
+    false,
+  );
+  assert.equal(checkoutReviewRequired({}, open, end), false);
 });

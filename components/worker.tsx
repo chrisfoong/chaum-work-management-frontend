@@ -91,11 +91,6 @@ export function WorkerHome({
             );
             return (
               <div key={str(r, "schedule_id")}>
-                <div className="map-preview">
-                  <MapPin size={34} />
-                  <span>{str(r, "location_name")}</span>
-                  <small>พิกัดจริงตรวจเมื่อเช็คอิน</small>
-                </div>
                 <ScheduleCard
                   row={r}
                   attendance={att}
@@ -119,7 +114,7 @@ export function WorkerHome({
                 />
                 {att && (
                   <div className="notice">
-                    สถานะวันนี้ <Badge value={att.status} /> · เช็คอิน{" "}
+                    สถานะวันนี้ <Badge value={att.status} /> · เช็กอิน{" "}
                     {clock(str(att, "check_in"))}
                   </div>
                 )}
@@ -160,7 +155,7 @@ export function WorkerHome({
         </div>
       </Panel>
       <p className="worker-note">
-        <ShieldCheck size={16} /> เช็คอินต้องผ่านทั้ง GPS ในระยะ 200 เมตร และ QR
+        <ShieldCheck size={16} /> เช็กอินต้องผ่านทั้ง GPS ในระยะ 200 เมตร และ QR
         ของพื้นที่
       </p>
       {action === "leave" && (
@@ -265,11 +260,11 @@ export function CheckIn({
   const gpsError = gpsProblem(position, lat, lng);
   const ready = !gpsError && !!qr && (!expires || expires > tick);
   return (
-    <Modal title="ยืนยันและเช็คอิน" onClose={onClose} busy={busy}>
+    <Modal title="ยืนยันและเช็กอิน" onClose={onClose} busy={busy}>
       {done ? (
         <div className="success">
           <Check size={42} />
-          <h3>เช็คอินเรียบร้อยแล้ว</h3>
+          <h3>เช็กอินเรียบร้อยแล้ว</h3>
           <p>บันทึกเวลาจาก Server แล้ว</p>
           <Button
             onClick={() => {
@@ -411,14 +406,14 @@ export function CheckIn({
                   });
                   setDone(true);
                 } catch (e) {
-                  setError(e instanceof Error ? e.message : "เช็คอินไม่สำเร็จ");
+                  setError(e instanceof Error ? e.message : "เช็กอินไม่สำเร็จ");
                 } finally {
                   setBusy(false);
                 }
               }}
               disabled={!ready || busy || (distance !== null && distance > 200)}
             >
-              {busy ? "กำลังเช็คอิน…" : "ยืนยัน GPS + QR และเช็คอิน"}
+              {busy ? "กำลังเช็กอิน…" : "ยืนยัน GPS + QR และเช็กอิน"}
             </Button>
           </div>
           <p className="muted">
@@ -444,7 +439,7 @@ export function Checkout({
   const timeReached = checkoutTimeReached(row, now);
   return (
     <ActionForm
-      title="ส่งผลงานและเช็คเอาท์"
+      title="ส่งผลงานและเช็กเอาท์"
       onClose={onClose}
       onDone={onDone}
       submitDisabled={!timeReached}
@@ -489,7 +484,7 @@ export function Checkout({
         />
       </Field>
       <p className="notice">
-        ระบบบันทึกเวลาจบงานจาก Server ต้องเช็คอินก่อนส่งผลงาน
+        ระบบบันทึกเวลาจบงานจาก Server ต้องเช็กอินก่อนส่งผลงาน
       </p>
     </ActionForm>
   );
@@ -782,7 +777,7 @@ function Shortage({
         />
       </Resource>
       <p className="notice">
-        ต้องเช็คอินในพื้นที่ก่อนส่งคำขอ ผลพิจารณาจะแจ้งผ่าน LINE Chat
+        ต้องเช็กอินในพื้นที่ก่อนส่งคำขอ ผลพิจารณาจะแจ้งผ่าน LINE Chat
       </p>
     </ActionForm>
   );

@@ -211,8 +211,7 @@ export function Portal() {
         </main>
         {!worker && (
           <footer className="app-footer">
-            © 2026 ชะอุ่ม · ระบบจัดการงานและพื้นที่สีเขียว{" "}
-            <span>{roleName(user.role)}</span>
+            © 2026 CHAUM RESOURCE MANAGEMENT <span>{roleName(user.role)}</span>
           </footer>
         )}
       </div>

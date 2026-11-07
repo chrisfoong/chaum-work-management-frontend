@@ -187,3 +187,5 @@ Verification: Frontend 48 tests, typecheck, lint, formatting and production buil
 - 48 tests passed; lint, typecheck, formatting and production build passed.
 - Production build used a source copy without secret files.
 - Live end-to-end use cases remain a separate verification; server health is not proof of all workflows.
+
+2026-11-07: Invoice form shows contract value, billed total and remaining budget from Backend; server remains authoritative. Profit table lists projects with activity first and explains zero values. 55 frontend tests, typecheck, lint and production Docker build passed. Isolated Backend HTTP flow is separate from real LINE/device end-to-end proof.

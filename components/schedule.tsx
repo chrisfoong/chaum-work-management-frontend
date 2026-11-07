@@ -238,8 +238,15 @@ function ScheduleForm({
       onClose={onClose}
       onDone={onDone}
       submit={(fd) => {
-        if (!area?.can_schedule)
-          throw new Error("พื้นที่นี้ยังไม่พร้อมจัดตารางงาน");
+        if (
+          !area ||
+          area.contract_status !== "active" ||
+          date < str(area, "start_date") ||
+          date > str(area, "end_date")
+        )
+          throw new Error(
+            "พื้นที่นี้ไม่อยู่ในช่วงสัญญาที่ใช้งานได้สำหรับวันที่เลือก",
+          );
         if (selected.length < num(area, "required_workers"))
           throw new Error("จำนวนคนงานไม่ครบขั้นต่ำของพื้นที่");
         return api.post("schedules", {
@@ -261,16 +268,22 @@ function ScheduleForm({
           }}
         >
           <option value="">เลือกพื้นที่</option>
-          {(areas.data || []).map((r) => (
-            <option
-              key={str(r, "assignment_id")}
-              value={str(r, "assignment_id")}
-              disabled={!r.can_schedule}
-            >
-              {str(r, "project_name")} · {str(r, "location_name")}
-              {!r.can_schedule ? " (ยังไม่พร้อม)" : ""}
-            </option>
-          ))}
+          {(areas.data || [])
+            .filter(
+              (r) =>
+                r.contract_status === "active" &&
+                date >= str(r, "start_date") &&
+                date <= str(r, "end_date"),
+            )
+            .map((r) => (
+              <option
+                key={str(r, "assignment_id")}
+                value={str(r, "assignment_id")}
+                disabled={false}
+              >
+                {str(r, "project_name")} · {str(r, "location_name")}
+              </option>
+            ))}
         </select>
       </Field>
       {areas.error && <ErrorBox error={areas.error} retry={areas.refresh} />}
@@ -284,6 +297,7 @@ function ScheduleForm({
             value={date}
             onChange={(e) => {
               setDate(e.target.value);
+              setAssignment("");
               setSelected([]);
             }}
           />
@@ -379,6 +393,16 @@ export function Leaves() {
               { key: "leave_date", label: "วันที่ลา", format: "date" },
               { key: "reason", label: "เหตุผล" },
               { key: "status", label: "สถานะ", format: "status" },
+              {
+                key: "checkout_review_required",
+                label: "การจบงาน",
+                format: (r) =>
+                  r.checkout_review_required
+                    ? "ขาดการเช็กเอาท์—รอตรวจสอบ"
+                    : r.check_out
+                      ? "เช็กเอาท์แล้ว"
+                      : "—",
+              },
             ]}
             onRow={setSelected}
           />
@@ -538,7 +562,7 @@ export function Attendance() {
               { key: "location_name", label: "พื้นที่" },
               {
                 key: "check_in",
-                label: "เช็คอิน",
+                label: "เช็กอิน",
                 format: (r) => clock(str(r, "check_in")),
               },
               { key: "status", label: "สถานะ", format: "status" },
@@ -721,7 +745,7 @@ export function StaffQR() {
   return (
     <>
       <Heading
-        title="QR เช็คอินพื้นที่"
+        title="QR เช็กอินพื้นที่"
         description="สร้าง QR ประจำพื้นที่สำหรับดาวน์โหลดและพิมพ์ติดหน้างาน พนักงานต้องสแกนพร้อมตรวจ GPS และกะงาน"
       />
       <Panel>

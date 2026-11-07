@@ -7,7 +7,7 @@ import "@fontsource/inter/400.css";
 import "@fontsource/inter/600.css";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "ชะอุ่ม | Chaum Work Management",
+  title: "CHAUM RESOURCE MANAGEMENT",
   description: "ระบบจัดการงาน พื้นที่ บุคลากร และอุปกรณ์ของชะอุ่ม",
   robots: { index: false, follow: false },
 };

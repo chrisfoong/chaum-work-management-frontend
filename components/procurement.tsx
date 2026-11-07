@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Package, RefreshCw } from "lucide-react";
 import { useSession } from "./auth";
 import {
@@ -155,8 +155,20 @@ function RequisitionDetail({ row, onBack }: { row: Row; onBack: () => void }) {
   const { user, get, list, api } = useSession();
   const id = str(row, "requisition_id");
   const resource = useData((signal) => get(`requisitions/${id}`, signal), [id]);
-  const r = object(resource.data);
   const [action, setAction] = useState<Action>("");
+  useEffect(() => {
+    const refresh = () => {
+      if (!document.hidden && !action) resource.refresh();
+    };
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, action]);
+  const r = object(resource.data);
   const [downloadError, setDownloadError] = useState("");
   const extra = r.requisition_type === "additional";
   const status = str(r, "status");

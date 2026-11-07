@@ -209,9 +209,11 @@ export function Login({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial);
   useEffect(() => {
-    if (isLocalLINEEntry(window.location.href)) return;
+    // Resume an existing LINE session even when LINE returns to the bare
+    // endpoint without callback parameters. Authentication/role checks remain
+    // in AuthProvider; an explicit error still requires a fresh login action.
+    if (initial || isLocalLINEEntry(window.location.href)) return;
     const params = new URLSearchParams(window.location.search);
-    if (!params.has("liff.state") && !params.has("liffClientId")) return;
     let alive = true;
     const invitedPlatform = invitationPlatformFromURL(window.location.href);
     const stored = invitedPlatform || sessionStorage.getItem("chaum-platform");
@@ -249,7 +251,7 @@ export function Login({
     return () => {
       alive = false;
     };
-  }, [defaultPlatform]);
+  }, [defaultPlatform, initial]);
   async function login() {
     setBusy(true);
     setError("");
@@ -301,7 +303,9 @@ export function Login({
           สิทธิ์การใช้งานตามบัญชีที่ได้รับเชิญ
         </p>
       </section>
-      <small className="login-entry-footer">© 2026 Chaum Work Management</small>
+      <small className="login-entry-footer">
+        © 2026 CHAUM RESOURCE MANAGEMENT
+      </small>
     </main>
   );
 }

@@ -39,6 +39,8 @@ export function allowed(method: string, parts: string[]): boolean {
   )
     return false;
   const path = rest.join("/");
+  if (path === "invoices/deduction-preview")
+    return platform === "web" && method === "GET";
   if (METHODS[path]?.includes(method)) return true;
   const uuid =
     "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
@@ -51,6 +53,7 @@ export function allowed(method: string, parts: string[]): boolean {
     ["POST", `contracts/${uuid}/assignments`],
     ["GET", `assignments/${uuid}/scope`],
     ["PATCH", `assignments/${uuid}/scope`],
+    ["DELETE", `assignments/${uuid}`],
     ["GET", `leave-requests/${uuid}(/candidates)?`],
     ["POST", `leave-requests/${uuid}/(review|replacement)`],
     [
@@ -66,7 +69,7 @@ export function allowed(method: string, parts: string[]): boolean {
     ["POST", `(payroll|invoices)/${uuid}/mark-paid`],
   ];
   const staffCorrection =
-    /^(contracts\/[^/]+\/(details|assignments)|assignments\/[^/]+\/scope|invoices\/[^/]+)$/.test(
+    /^(contracts\/[^/]+\/(details|assignments)|assignments\/[^/]+(\/scope)?|invoices\/[^/]+)$/.test(
       path,
     );
   if (platform === "liff" && staffCorrection) return false;

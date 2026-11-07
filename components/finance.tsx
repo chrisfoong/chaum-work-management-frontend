@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useSession } from "./auth";
 import { InvoiceEditor } from "./editing";
+import { InvoiceCreateForm } from "./invoice-form";
 import {
   ActionForm,
   AddButton,
@@ -26,7 +27,6 @@ import {
   Stat,
   Table,
   fdString,
-  options,
   useData,
 } from "./ui";
 import { DateFilters } from "./schedule";
@@ -48,6 +48,10 @@ export function Payroll() {
   const [action, setAction] = useState("");
   const [selected, setSelected] = useState<Row | null>(null);
   const range = period(month, half);
+  const periodClosed = todayBangkok() > range.period_end;
+  const opens = new Date(
+    Date.parse(`${range.period_end}T00:00:00+07:00`) + 86400000,
+  ).toISOString();
   const people = useData((signal) => list("users?limit=100", signal), []);
   const resource = useData(
     async (signal) => {
@@ -57,6 +61,14 @@ export function Payroll() {
       );
       return payrollForPeriod(result, range);
     },
+    [month, half],
+  );
+  const attendance = useData(
+    (signal) =>
+      list(
+        `attendance?period_start=${range.period_start}&period_end=${range.period_end}&limit=100`,
+        signal,
+      ),
     [month, half],
   );
   const summary = payrollSummary(resource.data || []);
@@ -69,12 +81,54 @@ export function Payroll() {
         title="ค่าจ้างและเงินหัก"
         description="ประมวลผลการเข้างานก่อนสรุปค่าจ้าง ยอดสุทธิไม่ต่ำกว่า 0"
         action={
-          <Button onClick={() => setAction("process")}>
+          <Button disabled={!periodClosed} onClick={() => setAction("process")}>
             <Wallet size={18} />
             ประมวลผลรอบนี้
           </Button>
         }
       />
+      {!periodClosed && (
+        <p className="notice" role="status">
+          งวดนี้ยังไม่สิ้นสุด ประมวลผลได้ตั้งแต่ {dateThai(opens)}{" "}
+          โดยต้องตรวจการเข้างานและเช็กเอาท์ให้ครบก่อน
+        </p>
+      )}
+      <Panel title="การเข้างานในงวด (ก่อนออกสลิป)">
+        <p className="notice">
+          แสดงเวลาที่พนักงานเช็กอินจริง การมาสายยังไม่ใช่สลิปค่าจ้าง
+          ต้องสรุปการเข้างานและประมวลผลหลังสิ้นงวดก่อน
+        </p>
+        <Resource {...attendance} retry={attendance.refresh}>
+          <Table
+            data={attendance.data || []}
+            columns={[
+              { key: "first_name", label: "พนักงาน" },
+              { key: "work_date", label: "วันที่", format: "date" },
+              { key: "status", label: "สถานะ", format: "status" },
+              {
+                key: "checkout_review_required",
+                label: "การจบงาน",
+                format: (r) =>
+                  r.checkout_review_required
+                    ? "ขาดการเช็กเอาท์—รอตรวจสอบ"
+                    : r.check_out
+                      ? "เช็กเอาท์แล้ว"
+                      : "—",
+              },
+              {
+                key: "check_in",
+                label: "เวลาเช็กอิน",
+                format: (r) =>
+                  !str(r, "check_in")
+                    ? "—"
+                    : new Date(str(r, "check_in")).toLocaleTimeString("th-TH", {
+                        timeZone: "Asia/Bangkok",
+                      }),
+              },
+            ]}
+          />
+        </Resource>
+      </Panel>
       <div className="toolbar">
         <Field label="เดือน">
           <input
@@ -197,6 +251,7 @@ export function Payroll() {
       {action === "process" && (
         <ActionForm
           title="ประมวลผลค่าจ้างทั้งรอบ"
+          submitDisabled={!periodClosed}
           onClose={() => setAction("")}
           onDone={resource.refresh}
           submit={async () => {
@@ -321,7 +376,11 @@ export function Finance() {
         : Promise.resolve([]),
     [tab],
   );
-  const data = rows(report.data);
+  const data = [...rows(report.data)].sort((a, b) => {
+    const active = (r: Row) =>
+      ["revenue", "labor", "material"].some((key) => Number(str(r, key)) !== 0);
+    return Number(active(b)) - Number(active(a));
+  });
   const totals = { revenue: 0n, labor: 0n, materials: 0n, profit: 0n };
   for (const r of data) {
     for (const [key, aliases] of Object.entries({
@@ -398,9 +457,25 @@ export function Finance() {
                 label="ต้นทุนจัดซื้อ"
                 value={money(decimal(totals.materials))}
               />
-              <Stat label="กำไรสุทธิ" value={money(decimal(totals.profit))} />
+              <Stat
+                label="กำไรสุทธิ"
+                value={money(decimal(totals.profit))}
+                note="รายรับที่รับเงินจริง หักค่าแรงและต้นทุนจัดซื้อในช่วงที่เลือก"
+              />
             </div>
+            {totals.profit < 0n && totals.revenue === 0n && (
+              <p className="notice">
+                มีค่าใช้จ่ายแล้ว แต่ยังไม่มีรายรับที่ยืนยันรับเงินจริงในช่วงนี้
+                กำไรจึงติดลบ ตรวจรายการในแท็บใบวางบิลและรับเงิน
+                โดยไม่ใช้มูลค่าสัญญาแทนยอดรับจริง
+              </p>
+            )}
             <Panel title="รายละเอียดรายโครงการ">
+              <p className="notice">
+                แสดงโครงการที่มีรายรับหรือต้นทุนก่อน ยอด 0
+                หมายถึงยังไม่มีรายการที่เข้าเงื่อนไขในช่วงที่เลือก: รับเงินแล้ว
+                จ่ายค่าจ้างแล้ว หรือบันทึกค่าใช้จ่ายจัดซื้อจริง
+              </p>
               <Table
                 data={data}
                 columns={[
@@ -553,57 +628,11 @@ export function Finance() {
         </Modal>
       )}
       {action === "invoice" && (
-        <ActionForm
-          title="สร้างใบวางบิล"
+        <InvoiceCreateForm
+          contracts={contracts.data || []}
           onClose={() => setAction("")}
           onDone={invoices.refresh}
-          submit={(fd) =>
-            api.post("invoices", {
-              tor_id: fdString(fd, "tor"),
-              billing_month: fdString(fd, "month"),
-              expected_amount: fdString(fd, "amount"),
-              exat_deduction_amount: fdString(fd, "deduction") || "0.00",
-              deduction_reason: fdString(fd, "reason"),
-            })
-          }
-        >
-          <Inputs
-            fields={[
-              {
-                name: "tor",
-                label: "โครงการ",
-                options: options(
-                  contracts.data || [],
-                  "tor_id",
-                  "project_name",
-                ),
-              },
-              {
-                name: "month",
-                label: "เดือนวางบิล",
-                type: "month",
-                value: todayBangkok().slice(0, 7),
-              },
-              {
-                name: "amount",
-                label: "ยอดวางบิล (บาท)",
-                pattern: "[0-9]+(\\.[0-9]{1,2})?",
-              },
-              {
-                name: "deduction",
-                label: "ยอดหักจากหน่วยงาน (บาท)",
-                value: "0.00",
-                pattern: "[0-9]+(\\.[0-9]{1,2})?",
-              },
-              {
-                name: "reason",
-                label: "เหตุผลเงินหัก",
-                type: "textarea",
-                required: false,
-              },
-            ]}
-          />
-        </ActionForm>
+        />
       )}
       {selected && (
         <ActionForm

@@ -24,7 +24,8 @@ export function ContractDetailsEditor({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const { list } = useSession();
+  const { list, api } = useSession();
+  const [remove, setRemove] = useState<Row | null>(null);
   const [section, setSection] = useState("contract");
   const [selected, setSelected] = useState<Row | "new" | null>(null);
   const [location, setLocation] = useState<Row | null>(null);
@@ -57,6 +58,30 @@ export function ContractDetailsEditor({
       </button>
     </div>
   );
+  if (remove)
+    return (
+      <ActionForm
+        title="ลบพื้นที่ออกจาก TOR"
+        onClose={() => setRemove(null)}
+        onDone={() => {
+          setRemove(null);
+          resource.refresh();
+          onDone();
+        }}
+        submit={() =>
+          api.response(`assignments/${str(remove, "assignment_id")}`, {
+            method: "DELETE",
+            body: "{}",
+          })
+        }
+      >
+        <p>ยืนยันลบพื้นที่ {str(remove, "location_name")} ออกจากสัญญานี้?</p>
+        <p className="notice">
+          ลบได้เฉพาะพื้นที่ที่ยังไม่มีกะงาน การสำรวจ หรือรายการจัดซื้อ
+          โดยไม่ลบสถานที่ในข้อมูลหลัก
+        </p>
+      </ActionForm>
+    );
   if (section === "contract")
     return (
       <ContractInfoEditor
@@ -110,6 +135,9 @@ export function ContractDetailsEditor({
               </Button>
               <Button variant="secondary" onClick={() => setLocation(area)}>
                 แก้ไขชื่อ ที่อยู่ และพิกัด
+              </Button>
+              <Button variant="secondary" onClick={() => setRemove(area)}>
+                ลบพื้นที่
               </Button>
             </div>
           </section>
@@ -526,16 +554,32 @@ export function InvoiceEditor({
   onClose: () => void;
   onDone: () => void;
 }) {
-  const { api } = useSession();
+  const { api, get } = useSession();
+  const deductionSource = useData(
+    (signal) =>
+      get(
+        `invoices/deduction-preview?tor_id=${str(row, "tor_id")}&billing_month=${str(row, "billing_month")}`,
+        signal,
+      ),
+    [row.tor_id, row.billing_month],
+  );
+  const calculated = object(deductionSource.data);
+
   return (
     <ActionForm
       title="แก้ไขใบวางบิลที่ยังไม่รับเงิน"
       onClose={onClose}
       onDone={onDone}
+      submitDisabled={
+        deductionSource.loading ||
+        !!deductionSource.error ||
+        !deductionSource.data ||
+        Number(calculated.pending_payroll || 0) > 0
+      }
       submit={(fd) =>
         api.patch(`invoices/${str(row, "invoice_id")}`, {
           expected_amount: fdString(fd, "expected_amount"),
-          exat_deduction_amount: fdString(fd, "exat_deduction_amount"),
+          auto_deduction: true,
           deduction_reason: fdString(fd, "deduction_reason"),
           previous_expected_amount: str(row, "expected_amount"),
         })
@@ -550,12 +594,6 @@ export function InvoiceEditor({
             pattern: "[0-9]+(\\.[0-9]{1,2})?",
           },
           {
-            name: "exat_deduction_amount",
-            label: "ยอดหักจากหน่วยงาน (บาท)",
-            value: str(row, "exat_deduction_amount") || "0.00",
-            pattern: "[0-9]+(\\.[0-9]{1,2})?",
-          },
-          {
             name: "deduction_reason",
             label: "เหตุผลเงินหัก",
             value: str(row, "deduction_reason"),
@@ -564,6 +602,21 @@ export function InvoiceEditor({
           },
         ]}
       />
+      <Field label="ยอดหักอัตโนมัติ (บาท)">
+        <input
+          aria-label="ยอดหักอัตโนมัติ"
+          readOnly
+          value={
+            deductionSource.loading
+              ? "กำลังคำนวณ…"
+              : str(calculated, "deduction_amount") || "—"
+          }
+        />
+      </Field>
+      {deductionSource.error && <p role="alert">{deductionSource.error}</p>}
+      {Number(calculated.pending_payroll || 0) > 0 && (
+        <p className="notice">ยังประมวลผลค่าจ้างของโครงการ/เดือนนี้ไม่ครบ</p>
+      )}
       <p className="notice">
         แก้ได้เฉพาะใบวางบิล pending หลังรับเงินจริงแล้วไม่สามารถเขียนทับยอดเดิม
       </p>
