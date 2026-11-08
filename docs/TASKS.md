@@ -189,3 +189,7 @@ Verification: Frontend 48 tests, typecheck, lint, formatting and production buil
 - Live end-to-end use cases remain a separate verification; server health is not proof of all workflows.
 
 2026-11-07: Invoice form shows contract value, billed total and remaining budget from Backend; server remains authoritative. Profit table lists projects with activity first and explains zero values. 55 frontend tests, typecheck, lint and production Docker build passed. Isolated Backend HTTP flow is separate from real LINE/device end-to-end proof.
+
+2026-11-08: Behavior-preserving Use Case module refactor. Split Worker, procurement and finance components into focused modules; keep all original public imports through compatibility entry files. Fifteen moved declarations structurally unchanged. Lint, typecheck and 57 tests pass. Production build verification recorded separately; no UI redesign, API/schema changes or production deployment. See REFACTOR_USECASE_MAP.md.
+
+Production build verification for 2026-11-08 refactor: next build --webpack passes (8 static pages generated); default Turbopack fails on the worktree's external node_modules junction. No Next.js config change, environment-file loading or deployment performed.
