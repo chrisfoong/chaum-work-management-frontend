@@ -2106,3 +2106,20 @@ textarea[aria-invalid="true"] {
   font-size: 8px;
   max-width: 150px;
 }
+
+/* Keep the Worker logo and company caption inside the fixed-height header. */
+.worker-shell .topbar .brand.small {
+  width: 144px;
+  flex-shrink: 0;
+  gap: 2px;
+}
+.worker-shell .topbar .brand.small .brand-logo {
+  width: 112px;
+  height: 40px;
+}
+.worker-shell .topbar .brand.small .brand-name {
+  max-width: 144px;
+  font-size: 7px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
