@@ -454,6 +454,9 @@ function LeaveReview({
             })
           : api.post(`leave-requests/${id}/review`, {
               status: decision,
+              ...(decision === "rejected"
+                ? { reason: fdString(fd, "reason") }
+                : {}),
               ...(fdString(fd, "worker")
                 ? { replacement_worker_id: fdString(fd, "worker") }
                 : {}),
@@ -490,13 +493,26 @@ function LeaveReview({
             </select>
           </Field>
         )}
+        {decision === "rejected" && row.status === "pending" && (
+          <Inputs
+            fields={[
+              {
+                name: "reason",
+                label: "เหตุผลที่ไม่อนุมัติ",
+                type: "textarea",
+                required: true,
+                maxLength: 500,
+              },
+            ]}
+          />
+        )}
         {(decision === "approved" || row.status === "approved") && (
           <Inputs
             fields={[
               {
                 name: "worker",
                 label: "พนักงานทำงานแทน",
-                required: true,
+                required: row.status === "approved",
                 options: options(
                   resource.data?.candidates || [],
                   "worker_id",

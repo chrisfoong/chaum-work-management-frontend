@@ -14,6 +14,10 @@ export class API {
     public role: Role,
     private token: () => string | null,
     public preview = false,
+    private options: {
+      onUnauthorized?: () => void;
+      requestTimeoutMs?: number;
+    } = {},
   ) {}
   private prefix() {
     return this.role === "worker" ? "liff" : "web";
@@ -22,7 +26,10 @@ export class API {
     if (this.preview)
       throw new APIError("โหมดตัวอย่างดูหน้าจอเท่านั้น ไม่บันทึกข้อมูล", 403);
     const token = this.token();
-    if (!token) throw new APIError("กรุณาเข้าสู่ระบบ LINE ใหม่", 401);
+    if (!token) {
+      this.options.onUnauthorized?.();
+      throw new APIError("กรุณาเข้าสู่ระบบ LINE ใหม่", 401);
+    }
     const headers = new Headers(init.headers);
     headers.set("Authorization", `Bearer ${token}`);
     headers.set("Accept", "application/json");
@@ -35,17 +42,30 @@ export class API {
     if (typeof init.body === "string")
       headers.set("Content-Type", "application/json");
     let response: Response;
+    const deadline = AbortSignal.timeout(
+      this.options.requestTimeoutMs ?? 60000,
+    );
+    const signal = init.signal
+      ? AbortSignal.any([init.signal, deadline])
+      : deadline;
     try {
       response = await fetch(`/api/backend/${this.prefix()}/${path}`, {
         ...init,
         headers,
         cache: "no-store",
         credentials: "omit",
+        signal,
       });
     } catch {
+      if (deadline.aborted && !init.signal?.aborted)
+        throw new APIError(
+          "ระบบตอบกลับช้า กรุณาลองโหลดข้อมูลใหม่ หากเพิ่งบันทึกรายการ ให้ตรวจสถานะล่าสุดก่อนทำซ้ำ",
+          408,
+        );
       throw new APIError("เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่", 0);
     }
     if (!response.ok) {
+      if (response.status === 401) this.options.onUnauthorized?.();
       const data = object(await response.json().catch(() => ({})));
       const error = object(data.error);
       const defaultMessage =
