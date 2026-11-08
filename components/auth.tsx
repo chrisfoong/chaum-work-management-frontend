@@ -107,6 +107,19 @@ export function AuthProvider({
       const client = new API(
         platform === "worker" ? "worker" : "supervisor",
         token,
+        false,
+        {
+          onUnauthorized: () => {
+            if (!alive) return;
+            setUser(null);
+            setAPI(null);
+            setOnboarding(null);
+            setError(
+              "การเข้าสู่ระบบ LINE หมดอายุ กรุณาเข้าสู่ระบบใหม่เพื่อใช้งานต่อ",
+            );
+            setLoading(false);
+          },
+        },
       );
       const invitation = captureInvitation();
       const state = object(await client.get("onboarding"));
